@@ -38,7 +38,6 @@ export function AuthProvider({ children }) {
             setUser(loggedInUser);
             localStorage.setItem("user", JSON.stringify(loggedInUser));
             localStorage.setItem("token", data.token);
-            console.log("AuthContext", JSON.stringify(loggedInUser))
             console.log("AuthContext", data.token)
             return { success: true, user: loggedInUser };
         }
@@ -57,7 +56,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
