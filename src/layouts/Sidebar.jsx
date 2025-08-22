@@ -15,17 +15,13 @@ function Layout() {
   return (
     <div className="flex flex-col h-screen">
       {/* 상단 헤더 */}
-      <HeaderAlarm />
       
-      {/* 타이틀 */}
-      <div className="bg-gradient-to-l from-indigo-200 to-sky-200 text-3xl font-bold bg-sky-200 p-4">
-        <span className="">스마트팩토리 ERP</span>
-      </div>
+      
 
       <div className="flex flex-1">
         {/* 사이드바 */}
         <aside className="w-64 bg-gradient-to-b from-sky-200 to-indigo-200 text-black p-6">
-          <Link to = "/" className="border text-2xl font-bold pb-10 block text-center h-20 mb-10">
+          <Link to = "/" className="text-2xl font-bold pb-10 block text-center h-20 mb-10">
             <img src={logo} alt="로고" className="mx-auto h-24" />
           </Link> 
           <div className="flex flex-col space-y-5">

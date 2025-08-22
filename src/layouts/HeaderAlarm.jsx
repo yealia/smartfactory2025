@@ -1,6 +1,9 @@
 import { BellIcon, QuestionMarkCircleIcon, SpeakerWaveIcon, PrinterIcon, CubeIcon} from "@heroicons/react/24/solid";
+import { useAuth } from "../auth/AuthContext";
 
 export default function HeaderAlarm() {
+  const { user } = useAuth();
+
   return (
     <div className="w-full py-3 bg-gradient-to-l from-indigo-200 to-sky-200 flex items-center justify-end px-4 shadow-sm">
       {/* 아이콘 영역 */}
@@ -16,6 +19,10 @@ export default function HeaderAlarm() {
       <button className="ml-6 border rounded-full px-4 py-1 text-sm text-sky-600 border-sky-300 hover:bg-sky-50 transition">
         임직원포털 바로가기
       </button>
+      
+      <span className="ml-4">
+        {user ? `${user.email.split("@")[0]}님 로그인` : null}
+      </span>
     </div>
   );
 }
