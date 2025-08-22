@@ -3,17 +3,23 @@ import './index.css'
 import Login from "./pages/Login";
 import MaterialRegistration from "./pages/MaterialRegistration";
 import Layout from "./layouts/Layout";
+import { AuthProvider } from "./auth/AuthContext";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/app" element={<Layout />}>
-        <Route path="materials/register" element={<MaterialRegistration />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        
+          <Route path="/" element={<Layout />}>
+            <Route path="materials" element={<MaterialRegistration />} />
+            {/* 다른 페이지들도 여기에 */}
+          </Route>
+        
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
