@@ -1,7 +1,7 @@
 export default function BodyGrid({columns, data=[]}){
 
   return (
-    <div className=" rounded-2xl overflow-hidden shadow">
+    <div className="rounded-2xl overflow-hidden shadow">
       <table className="w-full">
         <thead className="bg-white ">
           <tr className="divide-x-2 border-b-4">

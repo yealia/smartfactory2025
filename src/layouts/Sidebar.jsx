@@ -7,10 +7,11 @@ import logo from "../img/logo.png";
 const sideText = "hover:font-bold hover:text-yellow-500 hover:underline decoration-wavy p-2"; // 사이드바 텍스트
 
 
-function Layout() {
+export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isOpen2, setIsOpen2] = useState(false);
   const [isOpen3, setIsOpen3] = useState(false);
+  const [isOpenCustomer, setIsOpenCustomer] = useState(false);
 
   return (
     <div className="flex flex-col h-screen">
@@ -47,6 +48,28 @@ function Layout() {
                 <Link to="/team/employees" className={sideText}>직원 관리</Link>
                 <Link to="/team/attendance" className={sideText}>근태 관리</Link>
                 <Link to="/team/payroll" className={sideText}>급여 관리</Link>
+              </div>
+            </nav>
+
+            {/* 고객 관리 */}
+            <nav>
+              <div className="flex items-center justify-between">
+                <span className="font-bold mb-3">고객 관리</span>
+                <button onClick={() => setIsOpenCustomer(!isOpen)} className="p-1 bg-transparent">
+                  {isOpenCustomer ? (
+                    <ChevronUpIcon className="w-5 h-5" />
+                  ) : (
+                    <ChevronDownIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+
+              <div
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
+                  isOpenCustomer ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <Link to="/customerRegister" className={sideText}>고객 등록</Link>
               </div>
             </nav>
 
@@ -124,4 +147,3 @@ function Layout() {
   );
 }
 
-export default Layout;
