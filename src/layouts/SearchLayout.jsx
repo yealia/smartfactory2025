@@ -3,8 +3,11 @@ import React from "react";
 function SearchLayout({children}){
     const childArray = React.Children.toArray(children);
 
-    const inputs = childArray.filter(child => child.type.name == "SearchTextBox");
-    const buttons = childArray.filter(child => child.type.name == "SearchButton");
+    const inputs = childArray.filter(child => child.type.name == "SearchTextBox" || child.type.name =="SearchDatePicker");
+    const buttons = childArray.filter(child => child.type.name == "SearchButton" 
+                              || child.type.name == "InsertButton" 
+                              || child.type.name == "SaveButton"
+                            );
 
   return (
     <div className="rounded-2xl overflow-hidden bg-white p-4 shadow-sm mb-10">

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import HeaderAlarm from "../layouts/HeaderAlarm";
 import logo from "../img/logo.png";
+import mainPage from "../pages/MainPage";
 
 const sideText = "hover:font-bold hover:text-yellow-500 hover:underline decoration-wavy p-2"; // 사이드바 텍스트
 
@@ -22,7 +23,7 @@ export default function Sidebar() {
       <div className="flex flex-1">
         {/* 사이드바 */}
         <aside className="w-64 bg-gradient-to-b from-sky-200 to-indigo-200 text-black p-6">
-          <Link to = "/" className="text-2xl font-bold pb-10 block text-center h-20 mb-10">
+          <Link to = "/mainPage" className="text-2xl font-bold pb-10 block text-center h-20 mb-10">
             <img src={logo} alt="로고" className="mx-auto h-24" />
           </Link> 
           <div className="flex flex-col space-y-5">
@@ -91,7 +92,7 @@ export default function Sidebar() {
                   isOpen2 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                 }`}
                 >
-                  <Link to="/materials/1" className={sideText}>자재 관리1</Link>
+                  <Link to="/materials" className={sideText}>자재 등록</Link>
                   <Link to="/materials/2" className={sideText}>자재 관리2</Link>
                   <Link to="/materials/3" className={sideText}>자재 관리3</Link>
                 </div>
