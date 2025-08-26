@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import HeaderAlarm from "../layouts/HeaderAlarm";
-import Sidebar from "../layouts/Sidebar";
+import HeaderAlarm from "./HeaderAlarm";
+import Sidebar from "./Sidebar";
 
 export default function Layout() {
   return (
