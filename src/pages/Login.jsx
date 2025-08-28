@@ -1,32 +1,30 @@
 import { useState } from "react";
-//import { useLocation, useNavigate } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-
 import logo from "../img/logo.png";
 
 async function apiLogin({ email, password }) {
-    try{
-        const res = await fetch("http://localhost:8081/api/login",{
-            method : "POST",
+    try {
+        const res = await fetch("http://localhost:8081/api/login", {
+            method: "POST",
             headers: {
-               "content-Type": "application/json",
-            }, 
-            body:JSON.stringify({ email, password}),
+                "content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
         });
-        if(!res.ok){
+        if (!res.ok) {
             throw new Error("서버오류");
         }
         const data = await res.json();
-        if(data.success){
+        if (data.success) {
             console.log("로그인 성공", data);
             localStorage.setItem("token", data.token);
-            return true; 
-        } else{
+            return true;
+        } else {
             return false;
         }
-    }catch(err){
-        console.log("로그인API 오류",err);
+    } catch (err) {
+        console.log("로그인API 오류", err);
         return false;
     }
 }
@@ -34,16 +32,11 @@ async function apiLogin({ email, password }) {
 
 export default function Login() {
     const navigate = useNavigate();
-    //const location = useLocation();
-    //const from = location.state?.from?.pathname || "/app";
-    
-
     const [showPw, setShowPw] = useState(false);
     const [form, setForm] = useState({ email: "", password: "", remember: false });
     const [errors, setErrors] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-
 
     const onChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -62,21 +55,22 @@ export default function Login() {
     const { login } = useAuth();
 
     const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    try {
+        e.preventDefault();
+        if (!validate()) return;
         setLoading(true);
-        const result = await apiLogin({ email: form.email, password: form.password });
+        try {
+            const result = await login({ email: form.email, password: form.password });
 
-        if (result) {
-        navigate("/materials", { replace: true });
-        } else {
-        setErrorMsg("아이디 또는 비밀번호가 올바르지 않습니다.");
-        setTimeout(() => setErrorMsg(""), 3000);
+            if (result.success) {
+                console.log("네비게이트 실행");
+                navigate("/mainPage", { replace: true });
+            } else {
+                setErrorMsg("아이디 또는 비밀번호가 올바르지 않습니다.");
+                setTimeout(() => setErrorMsg(""), 3000);
+            }
+        } finally {
+            setLoading(false);
         }
-    } finally {
-        setLoading(false);
-    }
     };
 
 
@@ -108,18 +102,18 @@ export default function Login() {
                                 <p className="mt-1 text-sm text-gray-500">스마트팩토리 ERP/MES</p>
                             </div>
                             {/*로그인 에러창*/}
-                    
+
 
                             <form onSubmit={onSubmit} className="space-y-5" noValidate>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                                    <input name="email" type="email"placeholder="you@example.com" value={form.email} onChange={onChange}
+                                    <input name="email" type="email" placeholder="you@example.com" value={form.email} onChange={onChange}
                                         className={`w-full rounded-xl border bg-white px-3 py-2.5 outline-none transition placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-400/60
-                                        ${errors.email ? "border-rose-400 focus:ring-rose-300" : "border-gray-300 focus:border-indigo-500"}`}/>
+                                        ${errors.email ? "border-rose-400 focus:ring-rose-300" : "border-gray-300 focus:border-indigo-500"}`} />
                                     {errors.email && <p className="mt-1 text-sm text-rose-600">{errors.email}</p>}
                                 </div>
-                                {errorMsg && ( <div className="absolute z-[9999] fixed left-12 bg-rose-500 text-white px-4 py-2 rounded-full shadow-lg animate-bounce"> 
-                                    {errorMsg} </div> )
+                                {errorMsg && (<div className="absolute z-[9999] fixed left-12 bg-rose-500 text-white px-4 py-2 rounded-full shadow-lg animate-bounce">
+                                    {errorMsg} </div>)
                                 }
 
                                 {/* 비밀번호 */}
@@ -128,7 +122,7 @@ export default function Login() {
                                     <div className="relative">
                                         <input name="password" type={showPw ? "text" : "password"} placeholder="••••••" value={form.password} onChange={onChange}
                                             className={`w-full rounded-xl border bg-white px-3 py-2.5 pr-10 outline-none transition placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-400/60
-                                            ${errors.password ? "border-rose-400 focus:ring-rose-300" : "border-gray-300 focus:border-indigo-500"}`}/>
+                                            ${errors.password ? "border-rose-400 focus:ring-rose-300" : "border-gray-300 focus:border-indigo-500"}`} />
                                         <button type="button" onClick={() => setShowPw((v) => !v)}
                                             className="absolute inset-y-0 right-0 px-3 grid place-items-center text-gray-500 hover:text-gray-700">
                                             {showPw ? "숨김" : "보기"}
@@ -140,7 +134,7 @@ export default function Login() {
                                 {/* 옵션/비밀번호 링크 */}
                                 <div className="flex items-center justify-between text-sm">
                                     <label className="flex items-center gap-2">
-                                        <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} className="h-4 w-4 rounded border-gray-300"/>
+                                        <input type="checkbox" name="remember" checked={form.remember} onChange={onChange} className="h-4 w-4 rounded border-gray-300" />
                                         <span className="text-gray-700">로그인 상태 유지</span>
                                     </label>
                                     <a href="#" className="text-indigo-600 hover:underline">비밀번호 찾기</a>
@@ -154,15 +148,15 @@ export default function Login() {
                             <p className="text-center text-sm text-gray-500 mt-6">계정이 없으신가요?{" "}
                                 <a href="#" className="text-indigo-600 hover:underline">회원가입</a>
                             </p>
-                            
+
                         </div>
-                        
+
                     </div>
-                    
+
                 </div>
-                
+
             </div>
-            
+
         </div>
     );
 }
