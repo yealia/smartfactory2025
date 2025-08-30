@@ -17,17 +17,17 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col h-screen">
       {/* 상단 헤더 */}
-      
-      
+
+
 
       <div className="flex flex-1">
         {/* 사이드바 */}
         <aside className="w-64 bg-gradient-to-b from-sky-200 to-indigo-200 text-black p-6">
-          <Link to = "/mainPage" className="text-2xl font-bold pb-10 block text-center h-20 mb-10">
+          <Link to="/mainPage" className="text-2xl font-bold pb-10 block text-center h-20 mb-10">
             <img src={logo} alt="로고" className="mx-auto h-24" />
-          </Link> 
+          </Link>
           <div className="flex flex-col space-y-5">
-            
+
             {/* 인사 관리 */}
             <nav>
               <div className="flex items-center justify-between">
@@ -42,9 +42,8 @@ export default function Sidebar() {
               </div>
 
               <div
-                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
-                  isOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                }`}
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
               >
                 <Link to="/team/employees" className={sideText}>직원 관리</Link>
                 <Link to="/team/attendance" className={sideText}>근태 관리</Link>
@@ -66,11 +65,11 @@ export default function Sidebar() {
               </div>
 
               <div
-                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
-                  isOpenCustomer ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                }`}
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpenCustomer ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
               >
-                <Link to="/customerRegister" className={sideText}>고객 등록</Link>
+                <Link to="/customerRegister" className={sideText}>고객 관리</Link>
+                <Link to="/suppliersRegister" className={sideText}>공급업체 관리</Link>
               </div>
             </nav>
 
@@ -86,17 +85,16 @@ export default function Sidebar() {
                   )}
                 </button>
               </div>
-              
-                <div
-                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
-                  isOpen2 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                }`}
-                >
-                  <Link to="/materials" className={sideText}>자재 등록</Link>
-                  <Link to="/materials/2" className={sideText}>자재 관리2</Link>
-                  <Link to="/materials/3" className={sideText}>자재 관리3</Link>
-                </div>
-              
+
+              <div
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpen2 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
+              >
+                <Link to="/materials" className={sideText}>자재 등록</Link>
+                <Link to="/materials/2" className={sideText}>자재 관리2</Link>
+                <Link to="/materials/3" className={sideText}>자재 관리3</Link>
+              </div>
+
             </nav>
 
             {/* 프로젝트 관리 */}
@@ -114,16 +112,15 @@ export default function Sidebar() {
                   )}
                 </button>
               </div>
-                <div
-                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
-                  isOpen3 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
-                }`}
-                >
-                  <Link to="/projects/1" className={sideText}>프로젝트1</Link>
-                  <Link to="/projects/2" className={sideText}>프로젝트2</Link>
-                  <Link to="/projects/3" className={sideText}>프로젝트3</Link>
-                </div>
-              
+              <div
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpen3 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  }`}
+              >
+                <Link to="/projects/1" className={sideText}>프로젝트1</Link>
+                <Link to="/projects/2" className={sideText}>프로젝트2</Link>
+                <Link to="/projects/3" className={sideText}>프로젝트3</Link>
+              </div>
+
             </nav>
 
             {/* 단일 메뉴 */}
