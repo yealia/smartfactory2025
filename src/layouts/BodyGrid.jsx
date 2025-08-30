@@ -1,66 +1,126 @@
 /*
-그리드 컴포넌트(그리드 쓸때 가지고 가서 셋팅해서 사용.)
-각 셀에 글자 셋팅 가능함. 
-props : 부모 컴포넌트가 내려주는 값들.
-<tr> : 표의 한줄(행)
-<th> : 표의 제목 칸
-<td> : 표의 내용 칸
+트리 모드 지원 BodyGrid
+props:
+  - columns: [{ header: "자재명", accessor: "materialNm" }, ...]
+  - data: 계층형 데이터 (children 포함 가능)
+  - tree: boolean (트리 모드 여부)
+  - onRowClick: 행 클릭 이벤트
+  - onCellChange: 셀 수정 이벤트
+  - readOnly: 읽기 전용 여부
 */
-export default function BodyGrid({ columns, data = [], onRowClick, onCellChange, readOnly }) {
+
+import { useState } from "react";
+
+export default function BodyGrid({
+  columns,
+  data = [],
+  onRowClick,
+  onCellChange,
+  readOnly,
+  tree = false,
+  level = 0, // 들여쓰기 레벨
+}) {
+  //각 row별 펼침 상태
+  const [expandedRows, setExpandedRows] = useState({});
+  //버튼 누른 행만 하위 펼쳐지게
+  const toggleExpand = (id) => {
+    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
     <div className="rounded-2xl overflow-hidden shadow">
-      {/*테이블 생성*/}
-      <table className="table-fixed w-full border-collapse" readOnly={readOnly}>
-        {/*thead : 표의 머리 부분*/}
-        <thead className="bg-white ">
-          {/*tr : Table Row 표의 한줄*/}
+      <table className="table-fixed w-full border-collapse">
+        <thead className="bg-white">
           <tr className="divide-x-2 border-b-4">
-            {/*헤더 랜더링
-              map : 배열 안의 값들을 반복하면서 새로운 결과를 만들어줌.
-                    columns 배열 반복해서 <th>태그를 여러개 만듬
-                    => 즉, "고객ID", "고객명" 같은 표의 제목 줄을 자동으로 생성
-            */}
-            <th className="px-4 py-2 text-center">No</th>
+            <th className="px-4 py-2 text-center w-12">No</th>
             {columns.map((col, i) => (
-              /*th : Table Header 표의 제목 한칸*/
-              <th key={i} className="px-4 py-2 text-left whitespace-nowrap whitespace-nowrap">
-                {col.header} {/*화면에 보일 컬럼명*/}
+              <th
+                key={i}
+                className="px-4 py-2 text-left whitespace-nowrap"
+              >
+                {col.header}
               </th>
             ))}
           </tr>
         </thead>
-        {/*tbody : 표의 본문 부분*/}
         <tbody className="divide-y">
-          {/*표의 데이터가 없을 경우*/}
           {data.length === 0 ? (
             <tr>
-              {/*td : Table Data 표의 내용 한 칸*/}
-              <td colSpan={columns.length} className="text-center py-4 text-gray-500">
+              <td
+                colSpan={columns.length + 1}
+                className="text-center py-4 text-gray-500"
+              >
                 데이터가 없습니다.
               </td>
             </tr>
           ) : (
-            data.map((row, rowIndex) => ( /*데이터 배열을 반복해서 행<tr>을 여러개 만듦.*/
-              <tr key={rowIndex} onClick={() => onRowClick?.(row)} className="divide-x-2 hover:bg-white">
-                {/*NO컬럼 자동 증가 번호(의미는 없으나 시각적으로 몇개의 데이터가 있는지)*/}
-                <td className="px-4 py-2 text-center">{rowIndex + 1}</td>
-                {columns.map((col, colIndex) => (
-                  <td key={colIndex} className="px-4 py-2">
-                    {readOnly ? (
-                      row[col.accessor] || ""
+            data.map((row, rowIndex) => (
+              <>
+                <tr
+                  key={row._key || rowIndex}
+                  onClick={() => onRowClick?.(row)}
+                  className={`divide-x-2 ${tree && expandedRows[row._key] ? "bg-purple-200" : ""}`}>
+                  {/* No or Expand Button */}
+                  <td className="px-4 py-2 text-center">
+                    {tree && row.children ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(row._key);
+                        }}
+                        className="text-blue-600 font-bold"
+                      >
+                        {expandedRows[row._key] ? "−" : "+"}
+                      </button>
                     ) : (
-                      <input
-                        type="text"
-                        value={row[col.accessor] || ""} //현재 행의 해당 값 표시
-                        onChange={(e) => //사용자가 입력하면 부모에게 알림, OnCellChange 실행
-                          onCellChange?.(rowIndex, col.accessor, e.target.value)
-                        }
-                        className="w-full bg-transparent outline-none border-none p-0 m-0"
-                      />
+                      rowIndex + 1
                     )}
                   </td>
-                ))}
-              </tr>
+
+                  {/* 데이터 셀 */}
+                  {columns.map((col, colIndex) => (
+                    <td
+                      key={colIndex}
+                      className={`px-4 py-2 ${tree && colIndex === 0 ? `pl-${level * 4}` : ""}`}
+                    >
+                      {colIndex === 0 && level > 0 ? (
+                        <>▶</>
+                      ) : readOnly ? (
+                        row[col.accessor] || ""
+                      ) : (
+                        <input
+                          type="text"
+                          value={
+                            row[col.accessor] || ""}
+                          onChange={(e) =>
+                            onCellChange?.(rowIndex, col.accessor, e.target.value)
+                          }
+                          className="w-full bg-transparent outline-none border-none p-0 m-0"
+                        />
+                      )}
+                    </td>
+                  ))}
+                </tr>
+
+                {/* 하위 children */}
+                {tree &&
+                  row.children &&
+                  expandedRows[row._key] && (
+                    <tr>
+                      <td colSpan={columns.length + 1} className="p-0">
+                        <BodyGrid
+                          columns={columns}
+                          data={row.children}
+                          tree={true}
+                          level={level + 1}
+                          readOnly={readOnly}
+                          onRowClick={onRowClick}
+                          onCellChange={onCellChange}
+                        />
+                      </td>
+                    </tr>
+                  )}
+              </>
             ))
           )}
         </tbody>

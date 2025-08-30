@@ -1,7 +1,7 @@
 {
   "name": "erp-client",
   "private": true,
-  "version": "20250830002",
+  "version": "20250831001",
   "type": "module",
   "scripts": {
     "dev": "vite",
