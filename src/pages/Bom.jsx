@@ -8,13 +8,17 @@ import SearchDatePicker from "../components/search/SearchDatePicker";
 import SearchButton from "../components/search/SearchButton";
 import InsertButton from "../components/search/InsertButton";
 import SaveButton from "../components/search/SaveButton";
-import BodyGrid from "../layouts/BodyGrid";
+import TreeGrid from "../layouts/TreeGrid";
+import { useParams } from "react-router-dom";
 
 const API_BASE = "http://localhost:8081/api/boms";
 
 export default function Bom() {
     //전체 Bom데이터
     const [boms, setBoms] = useState([]);
+    //vessel 메뉴에서 넘어올때 
+    const { vesselId: vesselIdParam } = useParams();
+    const [searchVesselId, setSearchVesselId] = useState();
 
     // 테이블 컬럼 정의
     const columns = [
@@ -28,9 +32,14 @@ export default function Bom() {
     ];
     // 전체 조회 실행 
     useEffect(() => {
-        loadBoms();
+        if (vesselIdParam) {
+            setSearchVesselId(vesselIdParam);
+            loadBoms(vesselIdParam);
+        } else {
+            loadBoms();
+        }
         console.log("전체 조회");
-    }, []);
+    }, [vesselIdParam]);
     // 전체 BOM 목록 불러오기
     const loadBoms = async () => {
         try {
@@ -70,14 +79,18 @@ export default function Bom() {
         <div>
             <h2 className="font-bold mb-4">BOM 관리</h2>
             <SearchLayout>
-                <SearchTextBox label="선박ID" />
+                <SearchTextBox label="선박ID"
+                    value={vesselIdParam || ""}
+                    onChange={(e) => setSearchVesselId(e.target.value)}
+                />
                 {/*<SearchDatePicker /> */}
-                <SearchButton onClick={loadBoms} />
+                <SearchButton onClick={() => { loadBoms(searchVesselId) }} />
             </SearchLayout>
-            <BodyGrid columns={columns}
+            <TreeGrid columns={columns}
                 data={groupByVessel(boms)}
                 tree={true}
-                readOnly={true} />
+                onRowClick={(row) => console.log("클릭한 행:", row)}
+            />
         </div>
 
     );

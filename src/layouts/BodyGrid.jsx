@@ -10,6 +10,7 @@ props:
 */
 
 import { useState } from "react";
+import React from "react";
 
 export default function BodyGrid({
   columns,
@@ -44,87 +45,49 @@ export default function BodyGrid({
           </tr>
         </thead>
         <tbody className="divide-y">
-          {data.length === 0 ? (
-            <tr>
-              <td
-                colSpan={columns.length + 1}
-                className="text-center py-4 text-gray-500"
-              >
-                데이터가 없습니다.
-              </td>
-            </tr>
-          ) : (
-            data.map((row, rowIndex) => (
-              <>
-                <tr
-                  key={row._key || rowIndex}
-                  onClick={() => onRowClick?.(row)}
-                  className={`divide-x-2 ${tree && expandedRows[row._key] ? "bg-purple-200" : ""}`}>
-                  {/* No or Expand Button */}
-                  <td className="px-4 py-2 text-center">
-                    {tree && row.children ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpand(row._key);
-                        }}
-                        className="text-blue-600 font-bold"
-                      >
-                        {expandedRows[row._key] ? "−" : "+"}
-                      </button>
-                    ) : (
-                      rowIndex + 1
-                    )}
-                  </td>
-
-                  {/* 데이터 셀 */}
-                  {columns.map((col, colIndex) => (
-                    <td
-                      key={colIndex}
-                      className={`px-4 py-2 ${tree && colIndex === 0 ? `pl-${level * 4}` : ""}`}
-                    >
-                      {colIndex === 0 && level > 0 ? (
-                        <>▶</>
-                      ) : readOnly ? (
-                        row[col.accessor] || ""
-                      ) : (
-                        <input
-                          type="text"
-                          value={
-                            row[col.accessor] || ""}
-                          onChange={(e) =>
-                            onCellChange?.(rowIndex, col.accessor, e.target.value)
-                          }
-                          className="w-full bg-transparent outline-none border-none p-0 m-0"
-                        />
-                      )}
+          {data.length === 0 ?
+            (
+              <tr>
+                <td colSpan={columns.length + 1} className="text-center py-4 text-gray-500">
+                  데이터가 없습니다.
+                </td>
+              </tr>
+            ) : (
+              data.map((row, rowIndex) => (
+                // 🔽 Fragment에 key 부여
+                <React.Fragment key={row._key || rowIndex}>
+                  <tr
+                    onClick={() => onRowClick?.(row)}
+                    className={`divide-x-2 ${tree && expandedRows[row._key] ? "bg-purple-200" : ""}`}
+                  >
+                    <td className="px-4 py-2 text-center">
+                      {rowIndex + 1}
                     </td>
-                  ))}
-                </tr>
 
-                {/* 하위 children */}
-                {tree &&
-                  row.children &&
-                  expandedRows[row._key] && (
-                    <tr>
-                      <td colSpan={columns.length + 1} className="p-0">
-                        <BodyGrid
-                          columns={columns}
-                          data={row.children}
-                          tree={true}
-                          level={level + 1}
-                          readOnly={readOnly}
-                          onRowClick={onRowClick}
-                          onCellChange={onCellChange}
-                        />
+                    {columns.map((col) => (
+                      // 🔽 colIndex 대신 accessor 사용 → key 충돌 방지
+                      <td key={col.accessor} className={`px-4 py-2 ${tree && col.accessor === columns[0].accessor ? `pl-${level * 4}` : ""}`}>
+                        {level > 0 && col.accessor === columns[0].accessor ? (
+                          <>▶</>
+                        ) : readOnly ? (
+                          row[col.accessor] || ""
+                        ) : (
+                          <input
+                            type="text"
+                            value={row[col.accessor] || ""}
+                            onChange={(e) => onCellChange?.(rowIndex, col.accessor, e.target.value)}
+                            className="w-full bg-transparent outline-none border-none p-0 m-0"
+                          />
+                        )}
                       </td>
-                    </tr>
-                  )}
-              </>
-            ))
-          )}
+                    ))}
+                  </tr>
+                </React.Fragment>
+              ))
+            )}
         </tbody>
       </table>
-    </div>
+    </div >
   );
 }
+

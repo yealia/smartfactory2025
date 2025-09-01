@@ -8,6 +8,7 @@ import Layout from "./layouts/Layout";
 import MainPage from "./pages/MainPage";
 import ProjectRegister from "./pages/ProjectRegister";
 import Bom from "./pages/Bom";
+import Vessels from "./pages/vessel";
 import { AuthProvider } from "./auth/AuthContext";
 import { useAuth } from "./auth/AuthContext";
 
@@ -38,6 +39,8 @@ export default function App() {
           <Route path="suppliersRegister" element={<PrivateRoute><SuppliersRegister /></PrivateRoute>} />
           <Route path="materialRegistration" element={<PrivateRoute><MaterialRegistration /></PrivateRoute>} />
           <Route path="boms" element={<PrivateRoute><Bom /></PrivateRoute>} />
+          <Route path="boms/:vesselId" element={<PrivateRoute><Bom /></PrivateRoute>} />
+          <Route path="vessel" element={<PrivateRoute><Vessels /></PrivateRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
