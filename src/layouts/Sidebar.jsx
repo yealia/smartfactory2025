@@ -75,7 +75,7 @@ export default function Sidebar() {
                 className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpenCustomer ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                   }`}
               >
-                <Link to="/materials" className="">구매주문관리</Link>
+                <NavLink to="/materials" className={openToggleStyle}>구매주문관리</NavLink>
                 <Link to="/materials/2" className="">재고관리</Link>
               </div>
             </nav>
@@ -97,8 +97,9 @@ export default function Sidebar() {
                 className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${isOpen2 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                   }`}
               >
-                <Link to="/materials" className={openToggleStyle}>구매주문관리</Link>
-                <Link to="/materials/2" className={openToggleStyle}>재고관리</Link>
+                <Link to="/purchaseOrder" className={openToggleStyle}>구매주문관리</Link>
+                <Link to="/inventory" className={openToggleStyle}>재고관리</Link>
+                <Link to="/movement" className={openToggleStyle}>재고원장관리</Link>
               </div>
 
             </nav>

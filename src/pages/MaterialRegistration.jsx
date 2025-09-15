@@ -88,6 +88,8 @@ export default function MaterialRegister() {
             contactPhone: "",
             contactEmail: "",
             contactAddress: "",
+            warehouse: "",
+            location: "",
             isNew: true, //신규 행여부 true
         };
         handleUpdate(selectedMaterial.materialId); //자재 상세정보 입력가능하세
@@ -196,7 +198,28 @@ export default function MaterialRegister() {
                         readOnly={true} />
                 </div>
                 <div className="border w-full md:w-[65%] rounded-2xl overflow-hidden shadow p-6 bg-white">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">자재 상세정보</h3>
+                    <div className="border mb-4 flex items-center justify-between">
+                        {/* 제목 */}
+                        <h3 className="text-lg font-semibold text-gray-800">자재 상세정보</h3>
+
+                        {/* 버튼 영역 */}
+                        <div className="flex gap-x-4">
+                            <button type="button" onClick={() => handleUpdate(selectedMaterial.materialId)}
+                                className="px-6 py-2 bg-rose-500 text-white font-medium rounded-lg 
+                                        shadow-md focus:outline-none hover:bg-red-600
+                                        focus:ring-2 focus:ring-red-400 focus:ring-offset-1 
+                                        transition duration-200 whitespace-nowrap"
+                            >수정
+                            </button>
+                            <button type="button" onClick={() => handleDelete(selectedMaterial.materialId)}
+                                className="px-6 py-2 bg-rose-500 text-white font-medium rounded-lg 
+                                        shadow-md focus:outline-none hover:bg-red-600
+                                        focus:ring-2 focus:ring-red-400 focus:ring-offset-1 
+                                        transition duration-200 whitespace-nowrap"
+                            >삭제
+                            </button>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-6">
                         {/* 자재ID */}
                         <div>
@@ -230,6 +253,15 @@ export default function MaterialRegister() {
                             <label className={materialDetailLabel}>단위</label>
                             <input type="text" value={selectedMaterial?.unit || ""}
                                 onChange={(e) => { updateMaterialField("unit", e.target.value) }}
+                                className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : "bg-white"}`}
+                                readOnly={!isFieldEditable()}
+                            />
+                        </div>
+                        {/* 최근구매일 */}
+                        <div className="col-span-1">
+                            <label className={materialDetailLabel}>최근구매일</label>
+                            <input type="text" value={selectedMaterial?.lastPurchaseDate || ""}
+                                onChange={(e) => { updateMaterialField("lastPurchaseDate", e.target.value) }}
                                 className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : "bg-white"}`}
                                 readOnly={!isFieldEditable()}
                             />
@@ -307,11 +339,20 @@ export default function MaterialRegister() {
                                 readOnly={!isFieldEditable()}
                             />
                         </div>
-                        {/* 최근구매일 */}
+                        {/* 창고 */}
                         <div className="col-span-1">
-                            <label className={materialDetailLabel}>최근구매일</label>
-                            <input type="text" value={selectedMaterial?.lastPurchaseDate || ""}
-                                onChange={(e) => { updateMaterialField("lastPurchaseDate", e.target.value) }}
+                            <label className={materialDetailLabel}>창고</label>
+                            <input type="text" value={selectedMaterial?.warehouse || ""}
+                                onChange={(e) => { updateMaterialField("warehouse", e.target.value) }}
+                                className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : "bg-white"}`}
+                                readOnly={!isFieldEditable()}
+                            />
+                        </div>
+                        {/* 위치 */}
+                        <div className="col-span-2">
+                            <label className={materialDetailLabel}>위치</label>
+                            <input type="text" value={selectedMaterial?.location || ""}
+                                onChange={(e) => { updateMaterialField("location", e.target.value) }}
                                 className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : "bg-white"}`}
                                 readOnly={!isFieldEditable()}
                             />
@@ -326,22 +367,7 @@ export default function MaterialRegister() {
                             />
                         </div>
                     </div>
-                    <div className="flex justify-end gap-x-4">
-                        <button type="button"
-                            onClick={() => handleUpdate(selectedMaterial.materialId)}
-                            className="my-6 px-6 py-2 bg-rose-500 text-white font-medium rounded-lg 
-                            shadow-md focus:outline-none hover:bg-red-600
-                            focus:ring-2 focus:ring-red-400 focus:ring-offset-1 
-                            transition duration-200 whitespace-nowrap">수정
-                        </button>
-                        <button type="button"
-                            onClick={() => handleDelete(selectedMaterial.materialId)}
-                            className="my-6 px-6 py-2 bg-rose-500 text-white font-medium rounded-lg 
-                            shadow-md focus:outline-none hover:bg-red-600
-                            focus:ring-2 focus:ring-red-400 focus:ring-offset-1 
-                            transition duration-200 whitespace-nowrap">삭제
-                        </button>
-                    </div>
+
                 </div>
 
             </div>

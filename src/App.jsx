@@ -11,6 +11,9 @@ import Bom from "./pages/Bom";
 import Vessels from "./pages/vessel";
 import { AuthProvider } from "./auth/AuthContext";
 import { useAuth } from "./auth/AuthContext";
+import PurchaseOrder from "./pages/PurchaseOrder";
+import InventoryMovement from "./pages/InventoryMovement";
+import Inventory from "./pages/Inventory";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -41,6 +44,9 @@ export default function App() {
           <Route path="boms" element={<PrivateRoute><Bom /></PrivateRoute>} />
           <Route path="boms/:vesselId" element={<PrivateRoute><Bom /></PrivateRoute>} />
           <Route path="vessel" element={<PrivateRoute><Vessels /></PrivateRoute>} />
+          <Route path="purchaseOrder" element={<PrivateRoute><PurchaseOrder /></PrivateRoute>} />
+          <Route path="inventoryMovement" element={<PrivateRoute><InventoryMovement /></PrivateRoute>} />
+          <Route path="inventory" element={<PrivateRoute><Inventory /></PrivateRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
