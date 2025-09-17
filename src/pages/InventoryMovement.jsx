@@ -1,17 +1,21 @@
-
 import { useState, useEffect } from "react";
 import BodyGrid from "../layouts/BodyGrid";
 import SearchLayout from "../layouts/SearchLayout";
 import SearchButton from "../components/search/SearchButton";
 import axios from "axios";
+import SearchTextBox from "../components/search/SearchTextBox"; // ✅ SearchTextBox import 추가
 
 export default function InventoryMovement() {
-    const [movements, setmovements] = useState([]);
+    const [movements, setMovements] = useState([]);
+    
+    // ✅ [추가] 검색 조건 state
+    const [searchMovementId, setSearchMovementId] = useState("");
+    const [searchMaterialId, setSearchMaterialId] = useState("");
 
-    const API_BASE = "http://localhost:8081/api/movement"; //백엔드 api 주소 
+    // ✅ [수정] API 경로를 movements로 변경
+    const API_BASE = "http://localhost:8081/api/movements"; 
 
-
-    // 테이블 컬럼 정의
+    // 테이블 컬럼 정의 (기존과 동일)
     const columns = [
         { header: "이력ID", accessor: "movementId" },
         { header: "발생일시", accessor: "occurredAt" },
@@ -30,53 +34,64 @@ export default function InventoryMovement() {
         { header: "비고", accessor: "remark" },
         { header: "멱등키", accessor: "idempotencyKey" },
     ];
-    //전체 조회
+
+    // 첫 로딩 시 전체 조회
     useEffect(() => {
         loadMovement();
-    }, [])
-    // 전체 BOM 목록 불러오기
+    }, []);
+
+    // ✅ [수정] 조회 함수 - 검색 조건 파라미터 추가
     const loadMovement = async () => {
         try {
             const { data } = await axios.get(API_BASE, {
                 params: {
+                    movementId: searchMovementId || undefined,
+                    materialId: searchMaterialId || undefined,
                 }
             });
-            setmovements(data); //상태에 저장
-            console.log(data);
-            //console.log(data[0].vesselId);
+            setMovements(data); // 상태에 저장
         } catch (err) {
-            console.log("공급업체 목록 조회 실패", err);
+            console.error("재고 원장 조회 실패:", err);
         }
     };
-    const onRowClick = () => {
 
-    }
-    const onCellChange = () => {
+    const onRowClick = () => {};
+    const onCellChange = () => {};
 
-    }
     return (
-        <div className="w-screen h-screen p-4 bg-gray-50 space-y-4">
-            <div className="flex">
-                <h2 className="text-xl font-semibold">재고 원장</h2>
-                <SearchLayout>
-                    <SearchButton onClick={loadMovement} />
-                </SearchLayout>
-            </div>
-
-            {/* {err && (
-                <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-red-700">
-                    {err}
-                </div>
-            )} */}
+        <div className="p-6">
+            <h2 className="font-bold text-xl mb-4">재고 원장 관리</h2>
             
-            <BodyGrid className=""
-                columns={columns}
-                data={movements}
-                readOnly={true}     // 조회 전용. 수정하려면 false로 바꾸고 저장 로직 추가
-                tree={false}
-                onRowClick={onRowClick}
-                onCellChange={onCellChange}
-            />
+            {/* ✅ [수정] 검색 UI */}
+            <SearchLayout>
+                <SearchTextBox
+                    label="이력 ID"
+                    value={searchMovementId}
+                    onChange={(e) => setSearchMovementId(e.target.value)}
+                    type="number"
+                />
+                <SearchTextBox
+                    label="자재 ID"
+                    value={searchMaterialId}
+                    onChange={(e) => setSearchMaterialId(e.target.value)}
+                    type="number"
+                />
+                <SearchButton onClick={loadMovement}>조회</SearchButton>
+            </SearchLayout>
+
+            {/* 그리드 */}
+            <div className="mt-6">
+                <BodyGrid
+                    columns={columns}
+                    data={movements.map((movement) => ({
+                        ...movement,
+                        _key: movement.movementId 
+                    }))}
+                    readOnly={true}
+                    onRowClick={onRowClick}
+                    onCellChange={onCellChange}
+                />
+            </div>
         </div>
     );
 }
