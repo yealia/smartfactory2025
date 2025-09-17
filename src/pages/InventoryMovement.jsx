@@ -68,7 +68,7 @@ export default function InventoryMovement() {
                     {err}
                 </div>
             )} */}
-            sdfsdf
+            
             <BodyGrid className=""
                 columns={columns}
                 data={movements}
