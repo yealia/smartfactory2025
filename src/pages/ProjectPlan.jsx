@@ -22,12 +22,10 @@ export default function ProjectPlan() {
     endDate: "",
     status: "",
   });
-
-  // ✨ 모달 및 데이터 관리용 상태 추가
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null); // null이면 생성, 객체가 있으면 수정
+  const [editingPlan, setEditingPlan] = useState(null);
 
-  // BodyGrid에 표시될 컬럼 정의 (생성일/수정일 추가)
+  // --- 컬럼 및 헬퍼 함수 (이전과 동일) ---
   const columns = [
     { header: "계획 ID", accessor: "planId", readOnly: true },
     { header: "프로젝트 ID", accessor: "projectId" },
@@ -40,17 +38,13 @@ export default function ProjectPlan() {
       { value: 0, label: "계획" }, { value: 1, label: "진행" }, { value: 2, label: "완료" }
     ]},
     { header: "비고", accessor: "remark" },
-    { header: "생성일", accessor: "createdAt" }, 
-    { header: "수정일", accessor: "updatedAt" }, 
+    { header: "생성일", accessor: "createdAt", readOnly: true },
+    { header: "수정일", accessor: "updatedAt", readOnly: true },
   ];
 
   const getStatusText = (status) => {
-    switch (status) {
-      case 0: return "계획";
-      case 1: return "진행";
-      case 2: return "완료";
-      default: return "알 수 없음";
-    }
+    const found = columns.find(c => c.accessor === 'status').options.find(o => o.value === status);
+    return found ? found.label : "알 수 없음";
   };
 
   const toDateString = (value) => {
@@ -75,19 +69,19 @@ export default function ProjectPlan() {
     loadPlans();
   }, []);
 
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     try {
+      // ✨ 2. 토큰 관련 로직 모두 삭제
       const params = {
-        projectId: searchProjectId || undefined,
-        vesselId: searchVesselId || undefined,
-        startDate: searchStartDate || undefined,
-        endDate: searchEndDate || undefined,
-        status: searchStatus || undefined,
+        projectId: searchParams.projectId || undefined,
+        vesselId: searchParams.vesselId || undefined,
+        startDate: searchParams.startDate || undefined,
+        endDate: searchParams.endDate || undefined,
+        status: searchParams.status || undefined,
       };
-      
-      console.log("Sending search params:", params);
-      const { data } = await axios.get(API_BASE, { params });
-      setPlans(data);
+
+      const response = await axios.get(API_BASE, { params }); // ✨ headers 제거
+      setPlans(response.data);
     } catch (err) {
       console.error("생산계획 목록 조회 실패:", err);
       alert(`데이터 조회 중 오류 발생: ${err.message}`);
@@ -102,7 +96,7 @@ export default function ProjectPlan() {
     loadPlans();
   }, [loadPlans]);
 
-  // --- CRUD 핸들러 함수 (보안 로직 제거) ---
+ // --- CRUD 핸들러 함수 (보안 로직 제거) ---
   const handleSave = async () => {
     if (!editingPlan) return;
 
@@ -163,7 +157,7 @@ export default function ProjectPlan() {
 
   // --- 렌더링 ---
   return (
-    <div>
+     <div>
       <h2 className="font-bold text-2xl mb-4">생산 계획 관리</h2>
       <SearchLayout>
         <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({...searchParams, projectId: e.target.value})} />
@@ -174,19 +168,11 @@ export default function ProjectPlan() {
         <SearchButton onClick={loadPlans} />
         <InsertButton onClick={openCreateModal} />
       </SearchLayout>
-      
       <div className="mt-6">
         <BodyGrid
           columns={columns}
-          data={plans.map((plan) => ({
-            ...plan,
-            status: getStatusText(plan.status),
-            _key: plan.planId,
-            // DB에서 가져오는 필드 이름이 snake_case일 경우 매핑
-            createdAt: plan.createdAt || plan.created_at,
-            updatedAt: plan.updatedAt || plan.updated_at
-          }))}
-          onRowClick={handleRowClick}
+          data={plans.map((plan) => ({ ...plan, status: getStatusText(plan.status) }))}
+          onRowClick={openEditModal}
         />
       </div>
       {isModalOpen && (
