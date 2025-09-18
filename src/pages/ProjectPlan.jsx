@@ -9,7 +9,6 @@ import BodyGrid from "../layouts/BodyGrid";
 import InsertButton from "../components/search/InsertButton";
 import SaveButton from "../components/search/SaveButton";
 
-// Spring Boot 컨트롤러에 설정된 API 주소
 const API_BASE = "http://localhost:8081/api/project_plans";
 
 export default function ProjectPlan() {
@@ -20,7 +19,6 @@ export default function ProjectPlan() {
   const [searchEndDate, setSearchEndDate] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
 
-  // BodyGrid에 표시될 컬럼 정의 (생성일/수정일 추가)
   const columns = [
     { header: "계획 ID", accessor: "planId" },
     { header: "프로젝트 ID", accessor: "projectId" },
@@ -31,12 +29,12 @@ export default function ProjectPlan() {
     { header: "진행률(%)", accessor: "progressRate" },
     { header: "상태", accessor: "status" },
     { header: "비고", accessor: "remark" },
-    { header: "생성일", accessor: "createdAt" }, 
-    { header: "수정일", accessor: "updatedAt" }, 
+    { header: "생성일", accessor: "createdAt" },
+    { header: "수정일", accessor: "updatedAt" },
   ];
 
   const getStatusText = (status) => {
-    switch (status) {
+    switch (Number(status)) {
       case 0: return "계획";
       case 1: return "진행";
       case 2: return "완료";
@@ -46,15 +44,9 @@ export default function ProjectPlan() {
 
   const toDateString = (value) => {
     if (!value) return "";
-    if (value?.target && typeof value.target.value === "string") {
-      return toDateString(value.target.value);
-    }
-    if (value instanceof Date) {
-      return value.toISOString().slice(0, 10);
-    }
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
     if (typeof value === "string") {
-      if (value.includes("T")) return value.slice(0, 10);
-      return value;
+      return value.includes("T") ? value.slice(0, 10) : value;
     }
     return "";
   };
@@ -68,14 +60,13 @@ export default function ProjectPlan() {
 
   const loadPlans = async () => {
     try {
-      const params = {
-        projectId: searchProjectId || undefined,
-        vesselId: searchVesselId || undefined,
-        startDate: searchStartDate || undefined,
-        endDate: searchEndDate || undefined,
-        status: searchStatus || undefined,
-      };
-      
+      const params = {};
+      if (searchProjectId) params.projectId = searchProjectId;
+      if (searchVesselId) params.vesselId = searchVesselId;
+      if (searchStartDate) params.startDate = searchStartDate;
+      if (searchEndDate) params.endDate = searchEndDate;
+      if (searchStatus) params.status = Number(searchStatus);
+
       console.log("Sending search params:", params);
       const { data } = await axios.get(API_BASE, { params });
       setPlans(data);
@@ -87,6 +78,8 @@ export default function ProjectPlan() {
   const handleRowClick = (row) => {
     console.log("선택된 계획:", row);
   };
+
+  
 
   return (
     <div>
@@ -102,7 +95,7 @@ export default function ProjectPlan() {
         <InsertButton />
         <SaveButton />
       </SearchLayout>
-      
+
       <div className="mt-6">
         <BodyGrid
           columns={columns}
@@ -110,7 +103,6 @@ export default function ProjectPlan() {
             ...plan,
             status: getStatusText(plan.status),
             _key: plan.planId,
-            // DB에서 가져오는 필드 이름이 snake_case일 경우 매핑
             createdAt: plan.createdAt || plan.created_at,
             updatedAt: plan.updatedAt || plan.updated_at
           }))}

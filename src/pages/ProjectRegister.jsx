@@ -6,7 +6,7 @@ import SearchDatePicker from "../components/search/SearchDatePicker";
 import SearchButton from "../components/search/SearchButton";
 import InsertButton from "../components/search/InsertButton";
 import SaveButton from "../components/search/SaveButton";
-import EditableGrid from "../layouts/EditableGrid"; // 추가
+import EditableGrid from "../layouts/EditableGrid";
 
 const API_BASE = "http://localhost:8081/api/projects";
 
@@ -52,12 +52,14 @@ export default function ProjectRegister() {
                     deliveryDate: searchDeliveryDate || undefined,
                 }
             });
+
             const sortedData = res.data.sort((a, b) => a.priority - b.priority);
-            // _key 추가
+
             const mappedData = sortedData.map((p, i) => ({
                 ...p,
-                _key: p.projectId || `row_${i}`
+                _key: p.projectId || `row_${i}`,
             }));
+
             setProjects(mappedData);
         } catch (error) {
             console.error("프로젝트 데이터를 불러오는 중 오류:", error);
@@ -66,21 +68,22 @@ export default function ProjectRegister() {
 
     // --- 추가 버튼 ---
     const handleInsert = () => {
+        const today = new Date().toISOString().split("T")[0];
         const newProject = {
             projectId: "",
             projectNm: "",
             customerId: "",
             employeeId: "",
-            startDate: "",
-            deliveryDate: "",
+            startDate: today,
+            deliveryDate: today,
             priority: 0,
             progressRate: 0,
             totalBudget: 0,
             currencyCode: "KRW",
-            actualDeliveryDate: "",
+            actualDeliveryDate: today,
             remark: "",
-            createdAt: new Date().toISOString().split("T")[0],
-            updatedAt: new Date().toISOString().split("T")[0],
+            createdAt: today + " 00:00:00",
+            updatedAt: today + " 00:00:00",
             _key: `new_${projects.length + 1}`,
             isNew: true
         };
@@ -89,25 +92,28 @@ export default function ProjectRegister() {
 
     // --- 셀 편집 처리 ---
     const handleCellChange = (_key, accessor, value) => {
-        const updated = projects.map(row => {
-            if (row._key === _key) {
-                return { ...row, [accessor]: value };
-            }
-            return row;
-        });
-        setProjects(updated);
+        setProjects(prev =>
+            prev.map(row => (row._key === _key ? { ...row, [accessor]: value } : row))
+        );
     };
 
     // --- 저장 ---
     const handleSave = async () => {
         try {
             for (let project of projects) {
+                const payload = {
+                    ...project,
+                    startDate: project.startDate || null,
+                    deliveryDate: project.deliveryDate || null,
+                    actualDeliveryDate: project.actualDeliveryDate || null,
+                };
+
                 if (project.isNew) {
-                    const res = await axios.post(API_BASE, project);
+                    const res = await axios.post(API_BASE, payload);
                     project.projectId = res.data.projectId;
                     project.isNew = false;
                 } else {
-                    await axios.put(`${API_BASE}/${project.projectId}`, project);
+                    await axios.put(`${API_BASE}/${project.projectId}`, payload);
                 }
             }
             alert("저장이 완료되었습니다.");
@@ -132,7 +138,6 @@ export default function ProjectRegister() {
                 <SaveButton onClick={handleSave} />
             </SearchLayout>
 
-            {/* EditableGrid 적용 */}
             <EditableGrid
                 columns={columns}
                 data={projects}
