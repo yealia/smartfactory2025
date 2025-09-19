@@ -62,11 +62,11 @@ export default function Sidebar() {
                 <NavLink to="/materials" className={openToggleStyle}>
                   자재 관리
                 </NavLink>
-                <NavLink to="/boms" className={openToggleStyle}>
-                  BOM 관리
-                </NavLink>
                 <NavLink to="/vessel" className={openToggleStyle}>
                   선박 관리
+                </NavLink>
+                <NavLink to="/boms" className={openToggleStyle}>
+                  BOM 관리
                 </NavLink>
               </div>
             </nav>

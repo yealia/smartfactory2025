@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+// 공통 UI 컴포넌트 (기존과 동일)
 const SearchLayout = ({ children, className }) => <div className={className}>{children}</div>;
 const SearchTextBox = ({ label, value, onChange, className, type = "text" }) => (
   <div className={`flex flex-col ${className}`}>
@@ -27,7 +28,7 @@ const BodyGrid = ({ columns, data, onRowClick, selectedId }) => (
     <tbody className="bg-white divide-y divide-gray-200">
       {data.map((row) => (
         <tr
-          key={row._key}
+          key={row.employeeId || row._key}
           onClick={() => onRowClick(row)}
           className={`cursor-pointer hover:bg-sky-50 ${
             (selectedId && row.employeeId === selectedId) || (selectedId === null && row.isNew) ? "bg-sky-100" : ""
@@ -43,7 +44,6 @@ const BodyGrid = ({ columns, data, onRowClick, selectedId }) => (
     </tbody>
   </table>
 );
-
 const SearchButton = ({ onClick }) => (
   <button onClick={onClick} className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 shadow">
     조회
@@ -59,6 +59,11 @@ const SaveButton = ({ onClick }) => (
     저장
   </button>
 );
+const ResetButton = ({ onClick }) => (
+  <button onClick={onClick} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 shadow">
+    리셋
+  </button>
+);
 
 const API_BASE = "http://localhost:8081/api/employees";
 
@@ -69,7 +74,7 @@ export default function Employee() {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [searchDeptId, setSearchDeptId] = useState("");
+  const [searchEmpId, setSearchEmpId] = useState("");
   const [searchEmpNm, setSearchEmpNm] = useState("");
   const [message, setMessage] = useState("");
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -83,13 +88,13 @@ export default function Employee() {
     setTimeout(() => setMessage(""), 3000);
   };
 
-  const loadEmployees = async () => {
+  const loadEmployees = async (employeeId, employeeNm) => {
     setMessage("데이터를 조회하고 있습니다...");
     try {
       const { data } = await axios.get(API_BASE, {
         params: {
-          departmentId: searchDeptId || undefined,
-          employeeNm: searchEmpNm || undefined,
+          employeeId: employeeId || undefined,
+          employeeNm: employeeNm || undefined,
         },
       });
       setEmployees(data);
@@ -103,9 +108,14 @@ export default function Employee() {
     }
   };
 
+  const handleSearch = () => {
+    loadEmployees(searchEmpId, searchEmpNm);
+  };
+
   const handleInsert = () => {
     const newEmp = {
       isNew: true,
+      _key: `new_${Date.now()}`,
       employeeId: "",
       employeeNm: "",
       departmentId: "",
@@ -115,7 +125,7 @@ export default function Employee() {
       email: "",
       employeeStatus: "ACTIVE",
     };
-    setEmployees(prev => [...prev, newEmp]);
+    setEmployees(prev => [newEmp, ...prev]);
     setSelectedEmployee(newEmp);
     setIsEditing(true);
     setIsConfirmingDelete(false);
@@ -126,7 +136,7 @@ export default function Employee() {
     const updated = { ...selectedEmployee, [field]: value };
     setSelectedEmployee(updated);
     setEmployees(prev =>
-      prev.map(e => (e.isNew && e === selectedEmployee) || e.employeeId === updated.employeeId ? updated : e)
+      prev.map(e => (e._key === selectedEmployee._key ? updated : e))
     );
   };
 
@@ -202,6 +212,15 @@ export default function Employee() {
     setIsConfirmingDelete(false);
   };
 
+  // ✅ 수정된 부분
+  const handleReset = () => {
+    setSearchEmpId("");
+    setSearchEmpNm("");
+    // 검색 조건을 비우고 전체 목록을 다시 조회합니다.
+    loadEmployees("", ""); 
+    showMessage("검색 조건이 초기화되었습니다.");
+  };
+
   const columns = [
     { header: "사원ID", accessor: "employeeId" },
     { header: "사원명", accessor: "employeeNm" },
@@ -221,10 +240,10 @@ export default function Employee() {
 
       <SearchLayout className="bg-white rounded-xl p-4 shadow-md flex flex-col md:flex-row md:items-end gap-4 mb-6">
         <SearchTextBox
-          label="부서ID"
-          value={searchDeptId}
-          onChange={e => setSearchDeptId(e.target.value)}
-          type="number"
+          label="사원ID"
+          value={searchEmpId}
+          onChange={e => setSearchEmpId(e.target.value)}
+          type="text"
         />
         <SearchTextBox
           label="사원명"
@@ -232,7 +251,8 @@ export default function Employee() {
           onChange={e => setSearchEmpNm(e.target.value)}
         />
         <div className="flex gap-2 md:ml-auto mt-4 md:mt-0">
-          <SearchButton onClick={loadEmployees} />
+          <SearchButton onClick={handleSearch} />
+          <ResetButton onClick={handleReset} />
           <InsertButton onClick={handleInsert} />
           <SaveButton onClick={handleSaveNew} />
         </div>
@@ -242,7 +262,7 @@ export default function Employee() {
         <div className="w-full md:w-[35%] bg-white rounded-2xl shadow-md overflow-x-auto">
           <BodyGrid
             columns={columns}
-            data={employees.map(e => ({ ...e, _key: e.employeeId || Math.random() }))}
+            data={employees.map(e => ({ ...e, _key: e.isNew ? e._key : e.employeeId }))}
             onRowClick={handleRowClick}
             selectedId={selectedEmployee?.employeeId}
           />
@@ -354,7 +374,7 @@ export default function Employee() {
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">사원을 선택하거나 '행추가' 버튼으로 신규 등록하세요.</p>
+            <p className="text-gray-500">사원을 선택하거나 '추가' 버튼으로 신규 등록하세요.</p>
           )}
         </div>
       </div>
