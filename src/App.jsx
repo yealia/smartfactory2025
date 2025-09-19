@@ -48,9 +48,9 @@ export default function App() {
           <Route path="customerRegister" element={<PrivateRoute><CustomerRegister /></PrivateRoute>} />
           <Route path="suppliersRegister" element={<PrivateRoute><SuppliersRegister /></PrivateRoute>} />
           <Route path="materialRegistration" element={<PrivateRoute><MaterialRegistration /></PrivateRoute>} />
+          <Route path="vessel" element={<PrivateRoute><Vessels /></PrivateRoute>} />
           <Route path="boms" element={<PrivateRoute><Bom /></PrivateRoute>} />
           <Route path="boms/:vesselId" element={<PrivateRoute><Bom /></PrivateRoute>} />
-          <Route path="vessel" element={<PrivateRoute><Vessels /></PrivateRoute>} />
           <Route path="purchaseOrder" element={<PrivateRoute><PurchaseOrder /></PrivateRoute>} />
           <Route path="inventoryMovement" element={<PrivateRoute><InventoryMovement /></PrivateRoute>} />
           <Route path="inventory" element={<PrivateRoute><Inventory /></PrivateRoute>} />
