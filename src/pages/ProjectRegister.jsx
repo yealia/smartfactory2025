@@ -8,6 +8,7 @@ import SearchDatePicker from "../components/search/SearchDatePicker";
 import SearchButton from "../components/search/SearchButton";
 import InsertButton from "../components/search/InsertButton";
 import BodyGrid from "../layouts/BodyGrid";
+import ButtonLayout from "../components/search/ButtonLayout";
 
 const API_BASE = "http://localhost:8081/api/projects";
 
@@ -37,6 +38,10 @@ export default function ProjectRegister() {
   // 그리드에서 선택된 행(외부 삭제 버튼용)
   const [selectedProject, setSelectedProject] = useState(null);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+
+  // 현재 정렬 상태를 관리하는 state (key: 정렬 기준 컬럼, direction: 정렬 방향)
+    const [sortConfig, setSortConfig] = useState({ key: 'priority', direction: 'ascending' });
+
 
   // =================================================================================
   // II. 컬럼 정의 (Column Definitions)
@@ -77,25 +82,27 @@ export default function ProjectRegister() {
   const loadProjects = useCallback(async () => {
     try {
       const params = {
+        // 기존 검색 파라미터
         projectId: searchParams.projectId || undefined,
         projectNm: searchParams.projectNm || undefined,
-        customerId: searchParams.customerId || undefined,
-        startDate: searchParams.startDate || undefined,
-        deliveryDate: searchParams.deliveryDate || undefined,
+        // ...
+        
+        // 정렬 파라미터
+        sortBy: sortConfig.key,
+        sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
       };
       const response = await axios.get(API_BASE, { params });
-      setProjects(response.data); // state 업데이트
-      setSelectedProject(null);   // 새로운 목록을 불러왔으므로 행 선택 상태는 초기화
+      setProjects(response.data);
+      setSelectedProject(null);
     } catch (err) {
       console.error("프로젝트 목록 조회 실패:", err);
-      alert(`데이터 조회 중 오류 발생: ${err.message}`);
     }
-  }, [searchParams]); // searchParams가 변경될 때마다 함수를 새로 생성
+  }, [searchParams, sortConfig]);
 
   // 컴포넌트가 처음 마운트될 때 프로젝트 목록을 한번만 조회
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, [loadProjects]);
 
   // =================================================================================
   // IV. 이벤트 핸들러 (Event Handlers)
@@ -140,6 +147,16 @@ export default function ProjectRegister() {
         console.error("삭제 실패:", err);
       }
     }
+  };
+
+  // 헤더 클릭 시 정렬 상태를 변경하는 함수
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    // 만약 같은 컬럼을 다시 클릭했다면, 정렬 방향을 반대로 변경
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
   };
 
   // =================================================================================
@@ -195,6 +212,7 @@ export default function ProjectRegister() {
         {/* 검색 필드 */}
         <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({ ...searchParams, projectId: e.target.value })} />
         <SearchTextBox label="프로젝트명" value={searchParams.projectNm} onChange={(e) => setSearchParams({ ...searchParams, projectNm: e.target.value })} />
+        {/* <SearchTextBox label="고객 ID" value={searchParams.customerId} onChange={(e) => setSearchParams({ ...searchParams, customerId: e.target.value })} /> */}
         {isAdvancedSearch && (
           <>
             <SearchTextBox label="고객 ID" value={searchParams.customerId} onChange={(e) => setSearchParams({ ...searchParams, customerId: e.target.value })} />
@@ -203,18 +221,20 @@ export default function ProjectRegister() {
           </>
         )}
         
-        {/* 버튼들을 감싸던 div를 제거하고, 각각을 SearchLayout의 자식으로 배치합니다. */}
-        <SearchButton onClick={loadProjects} />
-        <button onClick={handleDeleteSelected} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-gray-400" disabled={!selectedProject}>
-            삭제
-        </button>
-        <button onClick={handleSearchReset} className="px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600">
-            초기화
-        </button>
-        <button onClick={() => setIsAdvancedSearch(!isAdvancedSearch)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
-            {isAdvancedSearch ? '간편 검색' : '상세 검색'}
-        </button>
-        <InsertButton onClick={openCreateModal} />
+    
+        
+          <SearchButton onClick={loadProjects} />
+          <button onClick={handleDeleteSelected} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-gray-400" disabled={!selectedProject}>
+              삭제
+          </button>
+          <button onClick={handleSearchReset} className="px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600">
+              초기화
+          </button>
+          <button onClick={() => setIsAdvancedSearch(!isAdvancedSearch)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+              {isAdvancedSearch ? '간편 검색' : '상세 검색'}
+          </button>
+          <InsertButton onClick={openCreateModal} />
+       
 
       </SearchLayout>
 
@@ -224,10 +244,12 @@ export default function ProjectRegister() {
           data={projects}
           onRowClick={handleRowClick}
           selectedId={selectedProject?.projectId}
+          sortConfig={sortConfig}
+          onHeaderClick={handleSort}
         />
       </div>
 
-      {/* ✨ 3. 하나로 통합된 모달 (요청사항 4번) */}
+      {/* 3. 하나로 통합된 모달 */}
       {isModalOpen && activeProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-1/2 max-h-[80vh] overflow-y-auto">
@@ -258,20 +280,20 @@ export default function ProjectRegister() {
               ))}
             </div>
             
-            {/* ✨ 모달 내부 버튼 (isEditMode에 따라 다르게 보임) */}
+            {/* 모달 내부 버튼 (isEditMode에 따라 다르게 보임) */}
             <div className="mt-6 flex justify-end gap-x-2">
               {isEditMode ? (
-                // 수정 모드 버튼
+                // 모달 바깥 모드 버튼
                 <>
                   <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     저장
                   </button>
-                  <button onClick={() => setIsEditMode(false)} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                    수정 취소
+                  <button onClick={closeModalAndRefresh} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                    취소
                   </button>
                 </>
               ) : (
-                // 보기 모드 버튼
+                // 모달 안 모드 버튼
                 <>
                   <button onClick={() => setIsEditMode(true)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                     수정

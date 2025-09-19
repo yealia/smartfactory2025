@@ -20,6 +20,12 @@ export default function BodyGrid({
   readOnly,
   tree = false,
   level = 0, // 들여쓰기 레벨
+
+  // 정렬기능 추가
+  sortConfig,
+  onHeaderClick,
+  selectedId, // selectedId prop 추가 (선택된 행 강조용)
+  onRowDoubleClick, // onRowDoubleClick prop 추가
 }) {
   //각 row별 펼침 상태
   const [expandedRows, setExpandedRows] = useState({});
@@ -36,10 +42,17 @@ export default function BodyGrid({
             <th className="px-4 py-2 text-center w-12">No</th>
             {columns.map((col, i) => (
               <th
-                key={i}
-                className="px-4 py-2 text-left whitespace-nowrap"
+                key={col.accessor}
+                className="p-3 text-sm font-semibold tracking-wide text-left cursor-pointer hover:bg-gray-100"
+                onClick={() => onHeaderClick?.(col.accessor)} // 헤더 클릭 시 onHeaderClick 함수 호출
               >
                 {col.header}
+
+                {sortConfig?.key === col.accessor && (
+                  <span>
+                    {sortConfig.direction === 'ascending' ? ' ▲' : ' ▼'}
+                  </span>
+                )}
               </th>
             ))}
           </tr>
@@ -58,7 +71,13 @@ export default function BodyGrid({
                 <React.Fragment key={row._key || rowIndex}>
                   <tr
                     onClick={() => onRowClick?.(row)}
-                    className={`divide-x-2 ${tree && expandedRows[row._key] ? "bg-purple-200" : ""}`}
+                    className={`
+                    divide-x-2
+                    hover:bg-gray-50
+                    ${selectedId === (row.projectId || row._key) ? 'bg-blue-100' // 행 선택 시 파란색
+                      : (tree && expandedRows[row._key] ? "bg-purple-200" : "") // 트리 확장 시 보라색
+                    }
+                  `}
                   >
                     <td className="px-4 py-2 text-center">
                       {rowIndex + 1}
