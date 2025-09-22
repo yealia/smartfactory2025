@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // 이 예제를 위한 모의 컴포넌트입니다.
 const SearchLayout = ({ children, className }) => <div className={`flex flex-col md:flex-row items-end gap-4 p-4 bg-white rounded-xl shadow-md ${className}`}>{children}</div>;
@@ -70,9 +71,11 @@ const BodyGrid = ({
 };
 
 const API_BASE = "http://localhost:8081/api/vessels";
-
 const detailLabel = "block text-sm font-medium text-gray-700 mb-1";
 const detailTextBox = "w-full rounded-lg border border-sky-300 shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400";
+
+const STATUS_MAP = { 0: '계획', 1: '진행', 2: '완료' };
+const getStatusText = (status) => STATUS_MAP[status] || '알 수 없음';
 
 export default function Vessels() {
     const [vessels, setVessels] = useState([]);
@@ -82,15 +85,15 @@ export default function Vessels() {
     const [searchVesselNm, setSearchVesselNm] = useState("");
     const [message, setMessage] = useState("");
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-    // --- 1. 로딩 상태 추가 ---
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
     
     const columns = [
         { header: "선박 ID", accessor: "vesselId" },
         { header: "선박명", accessor: "vesselNm" },
         { header: "선박유형", accessor: "vesselType" },
-        { header: "상태", accessor: "status" },
         { header: "프로젝트 ID", accessor: "projectId" },
+        { header: "상태", accessor: "statusText" },
     ];
 
     useEffect(() => {
@@ -102,9 +105,8 @@ export default function Vessels() {
         setTimeout(() => setMessage(""), 3000);
     };
 
-    // --- 2. 모든 비동기 함수에 로딩 상태 적용 ---
     const loadVessels = async (id = searchVesselId, name = searchVesselNm) => {
-        setIsLoading(true); // 작업 시작
+        setIsLoading(true);
         showMessage("데이터를 조회하고 있습니다...");
         try {
             const { data } = await axios.get(API_BASE, {
@@ -119,7 +121,7 @@ export default function Vessels() {
             console.error("선박 목록 조회 실패:", err);
             showMessage("선박 목록 조회 중 오류가 발생했습니다.");
         } finally {
-            setIsLoading(false); // 작업 종료 (성공/실패 모두)
+            setIsLoading(false);
         }
     };
     
@@ -145,7 +147,7 @@ export default function Vessels() {
             return;
         }
         
-        setIsLoading(true); // 작업 시작
+        setIsLoading(true);
         try {
             if (selectedVessel.isNew) {
                 const payload = { ...selectedVessel };
@@ -156,13 +158,12 @@ export default function Vessels() {
                 await axios.put(`${API_BASE}/${selectedVessel.vesselId}`, selectedVessel);
                 showMessage("선박 정보가 성공적으로 수정되었습니다.");
             }
-            await loadVessels(); // 저장 후 목록을 다시 로드합니다.
+            await loadVessels();
         } catch (err) {
             console.error("저장 실패:", err);
             showMessage("저장 중 오류가 발생했습니다.");
-            setIsLoading(false); // 실패 시에도 로딩 해제
+            setIsLoading(false);
         } 
-        // 성공 시 loadVessels가 끝나고 알아서 로딩이 해제됩니다.
     };
 
     const handleDelete = () => {
@@ -174,24 +175,21 @@ export default function Vessels() {
     };
 
     const confirmDelete = async () => {
-        setIsLoading(true); // 작업 시작
+        setIsLoading(true);
         try {
             await axios.delete(`${API_BASE}/${selectedVessel.vesselId}`);
             showMessage("선박이 성공적으로 삭제되었습니다.");
-            await loadVessels(); // 삭제 후 목록 다시 로드
+            await loadVessels();
         } catch (err) {
             console.error("삭제 실패:", err);
             showMessage("삭제 중 오류가 발생했습니다.");
-            setIsLoading(false); // 실패 시에도 로딩 해제
+            setIsLoading(false);
         } finally {
             setIsConfirmingDelete(false);
-            // 성공 시 loadVessels가 끝나고 알아서 로딩이 해제됩니다.
         }
     };
 
-    const cancelDelete = () => {
-        setIsConfirmingDelete(false);
-    };
+    const cancelDelete = () => setIsConfirmingDelete(false);
 
     const updateVesselField = (field, value) => {
         const updated = { ...selectedVessel, [field]: value };
@@ -202,9 +200,16 @@ export default function Vessels() {
     };
     
     const handleRowClick = (row) => {
-        setSelectedVessel(row);
+        const originalVessel = vessels.find(v => v.vesselId === row.vesselId) || row;
+        setSelectedVessel(originalVessel);
         setIsEditing(row.isNew || false);
         setIsConfirmingDelete(false);
+    };
+    
+    const navigateToBom = () => {
+        if (selectedVessel && selectedVessel.vesselId) {
+            navigate(`/boms/${selectedVessel.vesselId}`);
+        }
     };
 
     const handleReset = () => {
@@ -218,25 +223,15 @@ export default function Vessels() {
     return (
         <div className="p-6 bg-gray-50 min-h-screen font-inter">
             <h2 className="font-bold text-2xl mb-6 text-sky-700">선박 관리</h2>
+            {message && <div className="mb-4 p-3 bg-sky-100 text-sky-800 rounded-lg text-sm text-center">{message}</div>}
             
-            {message && (
-                <div className="mb-4 p-3 bg-sky-100 text-sky-800 rounded-lg text-sm text-center">
-                    {message}
-                </div>
-            )}
-            
-            {/* --- 3. 버튼에 disabled 속성 추가 --- */}
             <SearchLayout className="mb-6">
                 <SearchTextBox label="선박 ID" value={searchVesselId} onChange={(e) => setSearchVesselId(e.target.value)} />
                 <SearchTextBox label="선박명" value={searchVesselNm} onChange={(e) => setSearchVesselNm(e.target.value)} />
                 <div className="flex gap-2 md:ml-auto">
                     <SearchButton onClick={() => loadVessels()} disabled={isLoading}>조회</SearchButton>
-                    <button onClick={handleReset} disabled={isLoading} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-300 shadow disabled:bg-gray-100 disabled:cursor-not-allowed">
-                        리셋
-                    </button>
-                    <button onClick={handleInsert} disabled={isLoading} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow disabled:bg-green-300 disabled:cursor-not-allowed">
-                        추가
-                    </button>
+                    <button onClick={handleReset} disabled={isLoading} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-300 shadow disabled:bg-gray-100 disabled:cursor-not-allowed">리셋</button>
+                    <button onClick={handleInsert} disabled={isLoading} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow disabled:bg-green-300 disabled:cursor-not-allowed">추가</button>
                     <SaveButton onClick={handleSave} disabled={isLoading}>저장</SaveButton>
                 </div>
             </SearchLayout>
@@ -245,25 +240,19 @@ export default function Vessels() {
                 <div className="w-full md:w-1/2 bg-white rounded-2xl shadow-md overflow-x-auto">
                     <BodyGrid
                         columns={columns}
-                        data={vessels.map(v => ({ ...v, _key: v.vesselId || `new_${vessels.indexOf(v)}` }))}
+                        data={vessels.map(v => ({ ...v, statusText: getStatusText(v.status), _key: v.vesselId || `new_${vessels.indexOf(v)}` }))}
                         onRowClick={handleRowClick}
                         selectedId={selectedVessel?.vesselId}
                     />
                 </div>
-
                 <div className="w-full md:w-1/2 p-6 bg-white rounded-2xl shadow-md border border-sky-200">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xl font-semibold text-sky-800">선박 상세정보</h3>
-                        {selectedVessel && (
+                        {selectedVessel && !selectedVessel.isNew && (
                             <div className="flex gap-2">
-                                {!selectedVessel.isNew && (
-                                    <button onClick={() => setIsEditing(true)} disabled={isLoading} className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 shadow disabled:bg-sky-300 disabled:cursor-not-allowed">
-                                        수정
-                                    </button>
-                                )}
-                                <button onClick={handleDelete} disabled={isLoading} className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 shadow disabled:bg-rose-300 disabled:cursor-not-allowed">
-                                    삭제
-                                </button>
+                                <button onClick={navigateToBom} disabled={isLoading} className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 shadow disabled:bg-teal-300 disabled:cursor-not-allowed">BOM 보기</button>
+                                <button onClick={() => setIsEditing(true)} disabled={isLoading} className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 shadow disabled:bg-sky-300 disabled:cursor-not-allowed">수정</button>
+                                <button onClick={handleDelete} disabled={isLoading} className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 shadow disabled:bg-rose-300 disabled:cursor-not-allowed">삭제</button>
                             </div>
                         )}
                     </div>
@@ -280,64 +269,22 @@ export default function Vessels() {
 
                     {selectedVessel ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* 상세 정보 필드들은 변경사항 없음 */}
-                            <div>
-                                <label className={detailLabel}>선박 ID</label>
-                                <input type="text" value={selectedVessel.vesselId || ""} onChange={(e) => updateVesselField("vesselId", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() || !selectedVessel.isNew ? "bg-gray-100" : ""}`} readOnly={!selectedVessel.isNew} />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className={detailLabel}>선박명</label>
-                                <input type="text" value={selectedVessel.vesselNm || ""} onChange={(e) => updateVesselField("vesselNm", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>선박유형</label>
-                                <input type="text" value={selectedVessel.vesselType || ""} onChange={(e) => updateVesselField("vesselType", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>상태</label>
-                                <input type="number" value={selectedVessel.status || 0} onChange={(e) => updateVesselField("status", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>길이(m)</label>
-                                <input type="number" step="0.01" value={selectedVessel.vesselLength || ""} onChange={(e) => updateVesselField("vesselLength", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>폭(m)</label>
-                                <input type="number" step="0.01" value={selectedVessel.vesselBeam || ""} onChange={(e) => updateVesselField("vesselBeam", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>깊이(m)</label>
-                                <input type="number" step="0.01" value={selectedVessel.vesselDepth || ""} onChange={(e) => updateVesselField("vesselDepth", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>적재능력</label>
-                                <input type="text" value={selectedVessel.cargoCapacity || ""} onChange={(e) => updateVesselField("cargoCapacity", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className={detailLabel}>엔진스펙</label>
-                                <input type="text" value={selectedVessel.engineSpec || ""} onChange={(e) => updateVesselField("engineSpec", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>총중량</label>
-                                <input type="number" step="0.01" value={selectedVessel.totalWeight || ""} onChange={(e) => updateVesselField("totalWeight", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>실제납기일</label>
-                                <input type="date" value={selectedVessel.actualDeliveryDate || ""} onChange={(e) => updateVesselField("actualDeliveryDate", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div>
-                                <label className={detailLabel}>프로젝트 ID</label>
-                                <input type="text" value={selectedVessel.projectId || ""} onChange={(e) => updateVesselField("projectId", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
-                            <div className="md:col-span-3">
-                                <label className={detailLabel}>비고</label>
-                                <input type="text" value={selectedVessel.remark || ""} onChange={(e) => updateVesselField("remark", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} />
-                            </div>
+                            <div><label className={detailLabel}>선박 ID</label><input type="text" value={selectedVessel.vesselId || ""} onChange={(e) => updateVesselField("vesselId", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() || !selectedVessel.isNew ? "bg-gray-100" : ""}`} readOnly={!selectedVessel.isNew} /></div>
+                            <div className="md:col-span-2"><label className={detailLabel}>선박명</label><input type="text" value={selectedVessel.vesselNm || ""} onChange={(e) => updateVesselField("vesselNm", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>선박유형</label><input type="text" value={selectedVessel.vesselType || ""} onChange={(e) => updateVesselField("vesselType", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>프로젝트 ID</label><input type="text" value={selectedVessel.projectId || ""} onChange={(e) => updateVesselField("projectId", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>상태</label><select value={selectedVessel.status ?? 0} onChange={(e) => updateVesselField("status", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} disabled={!isFieldEditable()}><option value={0}>계획</option><option value={1}>진행</option><option value={2}>완료</option></select></div>
+                            <div><label className={detailLabel}>길이(m)</label><input type="number" step="0.01" value={selectedVessel.vesselLength || ""} onChange={(e) => updateVesselField("vesselLength", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>폭(m)</label><input type="number" step="0.01" value={selectedVessel.vesselBeam || ""} onChange={(e) => updateVesselField("vesselBeam", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>깊이(m)</label><input type="number" step="0.01" value={selectedVessel.vesselDepth || ""} onChange={(e) => updateVesselField("vesselDepth", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>적재능력</label><input type="text" value={selectedVessel.cargoCapacity || ""} onChange={(e) => updateVesselField("cargoCapacity", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div className="md:col-span-2"><label className={detailLabel}>엔진스펙</label><input type="text" value={selectedVessel.engineSpec || ""} onChange={(e) => updateVesselField("engineSpec", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>총중량</label><input type="number" step="0.01" value={selectedVessel.totalWeight || ""} onChange={(e) => updateVesselField("totalWeight", Number(e.target.value))} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div><label className={detailLabel}>실제납기일</label><input type="date" value={selectedVessel.actualDeliveryDate || ""} onChange={(e) => updateVesselField("actualDeliveryDate", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
+                            <div className="md:col-span-3"><label className={detailLabel}>비고</label><input type="text" value={selectedVessel.remark || ""} onChange={(e) => updateVesselField("remark", e.target.value)} className={`${detailTextBox} ${!isFieldEditable() ? "bg-gray-100" : ""}`} readOnly={!isFieldEditable()} /></div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500">
-                            선박을 선택해주세요.
-                        </div>
+                        <div className="flex items-center justify-center h-full text-gray-500">선박을 선택해주세요.</div>
                     )}
                 </div>
             </div>
