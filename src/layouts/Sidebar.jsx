@@ -18,6 +18,7 @@ export default function Sidebar() {
   const [isOpen3, setIsOpen3] = useState(false); // 인사관리 state
   const [isOpen4, setIsOpen4] = useState(false);
   const [isOpenCustomer, setIsOpenCustomer] = useState(false);
+  const [isOpenMonitoring, setIsOpenMonitoring] = useState(false);
 
   return (
     <div className="flex flex-col h-screen">
@@ -133,15 +134,15 @@ export default function Sidebar() {
             </nav>
 
             
-            {/* 전표관리 */}
+            {/*현장 모니터링 메뉴 */}
             <nav>
               <div className="flex items-center justify-between">
-                <span className="font-bold mb-3">판매관리</span>
+                <span className="font-bold mb-3">현장 모니터링</span>
                 <button
-                  onClick={() => setIsOpen4(!isOpen4)}
+                  onClick={() => setIsOpenMonitoring(!isOpenMonitoring)}
                   className="p-1 bg-transparent"
                 >
-                  {isOpen4 ? (
+                  {isOpenMonitoring ? (
                     <ChevronUpIcon className="w-5 h-5" />
                   ) : (
                     <ChevronDownIcon className="w-5 h-5" />
@@ -150,12 +151,12 @@ export default function Sidebar() {
               </div>
               <div
                 className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
-                  isOpen4 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                  isOpenMonitoring ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <NavLink to="/SalesOrder" className={openToggleStyle}>
-                  판매 등록
-                </NavLink>
+                <NavLink to="/droneimage" className={openToggleStyle}>
+                  드론 뷰
+                </NavLink>                
               </div>
             </nav>
 
@@ -186,6 +187,32 @@ export default function Sidebar() {
                 {/* ✅ [수정] 사원관리 메뉴 링크 경로 수정 */}
                 <NavLink to="/employee" className={openToggleStyle}>
                   사원 관리
+                </NavLink>
+              </div>
+            </nav>
+
+            {/* 전표관리 */}
+            <nav>
+              <div className="flex items-center justify-between">
+                <span className="font-bold mb-3">판매관리</span>
+                <button
+                  onClick={() => setIsOpen4(!isOpen4)}
+                  className="p-1 bg-transparent"
+                >
+                  {isOpen4 ? (
+                    <ChevronUpIcon className="w-5 h-5" />
+                  ) : (
+                    <ChevronDownIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              <div
+                className={`ml-2 flex flex-col transition-all duration-300 overflow-hidden ${
+                  isOpen4 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <NavLink to="/SalesOrder" className={openToggleStyle}>
+                  판매 등록
                 </NavLink>
               </div>
             </nav>
