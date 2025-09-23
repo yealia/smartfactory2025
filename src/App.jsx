@@ -17,9 +17,11 @@ import Inventory from "./pages/Inventory";
 import ProjectPlan from "./pages/ProjectPlan";
 import SalesOrder from "./pages/SalesOrder";
 
-// ✅ [추가] 새로 만들 페이지 컴포넌트 import
+// [추가] 새로 만들 페이지 컴포넌트 import
 import Department from "./pages/Department";
 import Employee from "./pages/Employee";
+
+import DroneImage from "./inquiry/Droneimage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -58,9 +60,11 @@ export default function App() {
 
 
 
-          {/* ✅ [추가] 부서 및 사원 관리 라우트 연결 */}
+          {/* [추가] 부서 및 사원 관리 라우트 연결 */}
           <Route path="department" element={<PrivateRoute><Department /></PrivateRoute>} />
           <Route path="employee" element={<PrivateRoute><Employee /></PrivateRoute>} />
+
+          <Route path="droneimage" element={<PrivateRoute><DroneImage /></PrivateRoute>}/>
           
         </Route>
 
