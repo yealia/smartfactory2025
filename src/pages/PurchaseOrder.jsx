@@ -46,11 +46,13 @@ export default function PurchaseOrders() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState(initialOrderState);
 
-    // 검색조건 입력 핸들러
-    const handleSearchChange = (e) => {
-        const { name, value } = e.target;
-        setSearch((prev) => ({ ...prev, [name]: value }));
-    };
+
+    // 검색조건 입력 핸들러
+    const handleSearchChange = (e) => {
+        const { name, value } = e.target;
+        setSearch((prev) => ({ ...prev, [name]: value }));
+    };
+
 
     // 발주 마스터 조회 함수 (로딩 상태 추가)
     const loadOrders = async () => {
@@ -138,6 +140,7 @@ export default function PurchaseOrders() {
         setEditingOrder(initialOrderState);
     };
 
+
     // 저장 처리 (신규/수정 공통)
     const handleSave = async () => {
         if (!editingOrder.purchaseOrder.supplierId) {
@@ -172,6 +175,7 @@ export default function PurchaseOrders() {
         }
     };
 
+
     const handleInspectionRequest = (order, e) => {
         e.stopPropagation();
         alert(`검사요청 기능 구현 예정: ${order.purchaseOrderId}`);
@@ -201,6 +205,7 @@ export default function PurchaseOrders() {
                     <button onClick={() => alert("저장 기능은 모달 안에서 처리됩니다.")} className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">저장</button>
                 </div>
             </div>
+
 
             {/* 상단: 발주 마스터 그리드 */}
             <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -327,6 +332,7 @@ export default function PurchaseOrders() {
                          />
                          {/* 여기에 필요한 다른 마스터 필드를 추가할 수 있습니다. */}
                     </div>
+
 
                     {/* 상세 정보 테이블 (기능 추가 필요) */}
                     <div className="border p-4 rounded-md space-y-2">
