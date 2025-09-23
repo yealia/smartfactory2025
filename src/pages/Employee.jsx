@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// ===================================================================================
-// Common UI Components (No changes from previous version)
-// ===================================================================================
-
 const SearchLayout = ({ children, className }) => <div className={className}>{children}</div>;
 const SearchTextBox = ({ label, value, onChange }) => (
   <div>
@@ -53,10 +49,6 @@ const ResetButton = ({ onClick }) => <button onClick={onClick} className="px-4 p
 const CancelButton = ({ onClick }) => <button onClick={onClick} className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 shadow">취소</button>;
 const SaveButton = ({ onClick }) => <button onClick={onClick} className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 shadow">저장</button>;
 
-
-// ===================================================================================
-// Employee Management Component
-// ===================================================================================
 
 const API_BASE = "http://localhost:8081/api/employees";
 const POSITIONS_API_BASE = "http://localhost:8081/api/positions";
