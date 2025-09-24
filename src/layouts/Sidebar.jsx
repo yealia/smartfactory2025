@@ -211,7 +211,7 @@ export default function Sidebar() {
                   isOpen4 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                <NavLink to="/SalesOrder" className={openToggleStyle}>
+                <NavLink to="/salesOrder" className={openToggleStyle}>
                   판매 등록
                 </NavLink>
               </div>
