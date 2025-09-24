@@ -14,34 +14,44 @@ const SearchTextBox = ({ label, value, onChange }) => (
   </div>
 );
 const BodyGrid = ({ columns, data, onRowClick, selectedId }) => (
-  <table className="min-w-full divide-y divide-gray-200">
-    <thead className="bg-sky-50">
-      <tr>
-        {columns.map((col) => (
-          <th key={col.accessor} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            {col.header}
-          </th>
-        ))}
-      </tr>
-    </thead>
-    <tbody className="bg-white divide-y divide-gray-200">
-      {data.map((row) => (
-        <tr
-          key={row.employeeId || row._key}
-          onClick={() => onRowClick(row)}
-          className={`cursor-pointer hover:bg-sky-50 ${
-            selectedId && row.employeeId === selectedId ? "bg-sky-100" : ""
-          }`}
-        >
-          {columns.map((col) => (
-            <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-              {row[col.accessor]}
-            </td>
-          ))}
-        </tr>
-      ))}
-    </tbody>
-  </table>
+    <div className="h-[calc(100vh-280px)] overflow-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-sky-50 sticky top-0">
+            <tr>
+                {columns.map((col) => (
+                <th key={col.accessor} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {col.header}
+                </th>
+                ))}
+            </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+            {data.length === 0 ? (
+                <tr>
+                    <td colSpan={columns.length} className="text-center py-4 text-gray-500">
+                        데이터가 없습니다.
+                    </td>
+                </tr>
+            ) : (
+                data.map((row) => (
+                    <tr
+                    key={row.employeeId || row._key}
+                    onClick={() => onRowClick(row)}
+                    className={`cursor-pointer hover:bg-sky-50 ${
+                        selectedId && row.employeeId === selectedId ? "bg-sky-100" : ""
+                    }`}
+                    >
+                    {columns.map((col) => (
+                        <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {row[col.accessor]}
+                        </td>
+                    ))}
+                    </tr>
+                ))
+            )}
+            </tbody>
+        </table>
+    </div>
 );
 const SearchButton = ({ onClick }) => <button onClick={onClick} className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 shadow">조회</button>;
 const InsertButton = ({ onClick }) => <button onClick={onClick} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow">추가</button>;
@@ -114,18 +124,14 @@ export default function Employee() {
     }
   };
   
-  // ✅ [수정] 직책 목록을 불러오는 함수에 디버깅용 console.log 추가
   const loadPositions = async () => {
     try {
       const { data } = await axios.get(POSITIONS_API_BASE);
-      // API 응답 데이터를 콘솔에 출력하여 확인
-      console.log("Fetched positions:", data);
-      // 응답이 배열 형태가 아닐 경우를 대비하여 안전 장치 추가
       if (Array.isArray(data)) {
         setPositions(data);
       } else {
         console.error("직책 API 응답이 배열이 아닙니다:", data);
-        setPositions([]); // 배열이 아니면 빈 배열로 설정
+        setPositions([]);
       }
     } catch (err) {
       console.error("직책 목록 조회 실패", err);
@@ -321,7 +327,7 @@ export default function Employee() {
           />
         </div>
 
-        <div className="w-full md:w-[55%] bg-white rounded-2xl shadow-md p-6 border border-sky-200">
+        <div className="w-full md:w-[55%] bg-white rounded-2xl shadow-md p-6 border border-sky-200 flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-sky-800">사원 상세정보</h3>
             {selectedEmployee && !selectedEmployee.isNew && (
@@ -376,7 +382,6 @@ export default function Employee() {
                   className={`${detailTextBox} ${!isFieldEditable ? "bg-gray-100" : "bg-white"}`}
                   disabled={!isFieldEditable}
                 >
-                  {/* ✅ [수정] 직책 데이터가 없을 때 더 명확한 메시지 표시 */}
                   <option value="" disabled>
                     {positions.length > 0 ? "직책을 선택하세요" : "직책 정보 없음"}
                   </option>
@@ -428,7 +433,9 @@ export default function Employee() {
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 text-center mt-10">사원을 선택하거나 '추가' 버튼으로 신규 등록하세요.</p>
+            <div className="flex-grow flex items-center justify-center">
+                 <p className="text-gray-500">사원을 선택하거나 '추가' 버튼으로 신규 등록하세요.</p>
+            </div>
           )}
 
         </div>
@@ -436,4 +443,3 @@ export default function Employee() {
     </div>
   );
 }
-

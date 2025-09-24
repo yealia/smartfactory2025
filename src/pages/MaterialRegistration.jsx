@@ -1,5 +1,5 @@
 /*
-메뉴명 : 자재 등록 
+메뉴명 : 자재 등록 
 */
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -269,12 +269,12 @@ export default function MaterialRegister() {
             })
         );
     };
-
+    
+    // ✅ 1. 표에 보일 컬럼 수정
     const columns = [
         { header: "자재명", accessor: "materialNm" },
         { header: "자재분류", accessor: "category" },
         { header: "단위", accessor: "unit" },
-        { header: "규격", accessor: "specification" },
     ];
     
     const isFieldEditable = () => selectedMaterial?.isNew || isEditing;
@@ -303,7 +303,8 @@ export default function MaterialRegister() {
             </SearchLayout>
 
             <div className="flex flex-col md:flex-row gap-4 mt-4">
-                <div className="w-full md:w-1/2">
+                {/* ✅ 2. 그리드(왼쪽) 너비 조정 (35%) */}
+                <div className="w-full md:w-[35%]">
                     <BodyGrid
                         columns={columns}
                         data={materials}
@@ -312,7 +313,8 @@ export default function MaterialRegister() {
                     />
                 </div>
                 
-                <div className="w-full md:w-1/2 p-6 bg-white rounded-2xl shadow-lg">
+                {/* ✅ 2. 상세정보 카드(오른쪽) 너비 조정 (65%) 및 스타일 통일 */}
+                <div className="border w-full md:w-[65%] rounded-2xl shadow-lg p-6 bg-white">
                     {selectedMaterial ? (
                         <>
                             <div className="flex justify-between items-center mb-5">

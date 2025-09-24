@@ -1,226 +1,330 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-// import { getToken } from "../utils/api"; // getToken 유틸리티 import
 
-import SearchLayout from "../layouts/SearchLayout";
-import SearchTextBox from "../components/search/SearchTextBox";
-import SearchDatePicker from "../components/search/SearchDatePicker";
-import SearchButton from "../components/search/SearchButton";
-import BodyGrid from "../layouts/BodyGrid";
-import InsertButton from "../components/search/InsertButton";
+// ===================================================================
+// I. UI Components (프로젝트 메뉴 스타일과 동일하게 재사용)
+// ===================================================================
 
-// Spring Boot 컨트롤러에 설정된 API 주소
+const SearchLayout = ({ children }) => (
+    <div className="p-4 mb-4 bg-white rounded-lg shadow-md flex flex-wrap items-end gap-4 border border-gray-200">
+        {children}
+    </div>
+);
+
+const SearchTextBox = ({ label, ...props }) => (
+    <div className="flex-grow min-w-[200px]">
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <input type="text" {...props} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500" />
+    </div>
+);
+
+const SearchDatePicker = ({ label, ...props }) => (
+    <div className="flex-grow min-w-[200px]">
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <input type="date" {...props} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500" />
+    </div>
+);
+
+const StyledButton = ({ onClick, disabled, children, colorClass }) => (
+    <button onClick={onClick} disabled={disabled} className={`flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 transition-all duration-200 ${colorClass} disabled:bg-gray-400 disabled:cursor-not-allowed`}>
+        {children}
+    </button>
+);
+
+// ✅ [수정] BodyGrid가 컬럼 정의에 render 함수를 지원하도록 수정
+const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick }) => (
+    <div className="h-[calc(100vh-280px)] overflow-auto border rounded-lg shadow-md bg-white">
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                    {columns.map((col) => (
+                        <th 
+                            key={col.accessor} 
+                            onClick={() => onHeaderClick && onHeaderClick(col.accessor)}
+                            className={`px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider ${onHeaderClick ? 'cursor-pointer' : ''}`}
+                        >
+                            {col.header}
+                        </th>
+                    ))}
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+                {data.length === 0 ? (
+                    <tr>
+                        <td colSpan={columns.length} className="text-center py-4 text-gray-500">
+                            데이터가 없습니다.
+                        </td>
+                    </tr>
+                ) : (
+                    data.map((row) => (
+                        // ✅ [수정] 행 전체 클릭(onRowClick) 기능 제거
+                        <tr
+                            key={row.planId}
+                            className={`${selectedId && row.planId === selectedId ? 'bg-sky-100' : 'hover:bg-gray-50'}`}
+                        >
+                            {columns.map((col) => (
+                                <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    {/* ✅ [추가] col.render가 있으면 함수 실행, 없으면 기존 방식대로 텍스트 표시 */}
+                                    {col.render ? col.render(row) : row[col.accessor]}
+                                </td>
+                            ))}
+                        </tr>
+                    ))
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+
+// ===================================================================
+// II. 메인 컴포넌트
+// ===================================================================
 const API_BASE = "http://localhost:8081/api/project_plans";
 
 export default function ProjectPlan() {
-  // --- 상태 관리 ---
-  const [plans, setPlans] = useState([]);
-  const [searchParams, setSearchParams] = useState({
-    projectId: "",
-    vesselId: "",
-    startDate: "",
-    endDate: "",
-    status: "",
-  });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
+    const [plans, setPlans] = useState([]);
+    const [searchParams, setSearchParams] = useState({
+        projectId: "", vesselId: "", startDate: "", endDate: "", status: "",
+    });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState(null);
+    const [selectedGridPlan, setSelectedGridPlan] = useState(null);
+    const [sortConfig, setSortConfig] = useState({ key: 'planId', direction: 'ascending' });
 
-  // --- 컬럼 및 헬퍼 함수 (이전과 동일) ---
-  const columns = [
-    { header: "계획 ID", accessor: "planId", readOnly: true },
-    { header: "프로젝트 ID", accessor: "projectId" },
-    { header: "선박 ID", accessor: "vesselId" },
-    { header: "계획 범위", accessor: "planScope" },
-    { header: "시작일", accessor: "startDate", type: "date" },
-    { header: "종료일", accessor: "endDate", type: "date" },
-    { header: "진행률(%)", accessor: "progressRate" },
-    { header: "상태", accessor: "status", type: "select", options: [
-      { value: 0, label: "계획" }, { value: 1, label: "진행" }, { value: 2, label: "완료" }
-    ]},
-    { header: "비고", accessor: "remark" },
-    { header: "생성일", accessor: "createdAt", readOnly: true },
-    { header: "수정일", accessor: "updatedAt", readOnly: true },
-  ];
+    const statusOptions = [
+        { value: 0, label: "계획" }, { value: 1, label: "진행" }, { value: 2, label: "완료" }
+    ];
 
-  const getStatusText = (status) => {
-    const found = columns.find(c => c.accessor === 'status').options.find(o => o.value === status);
-    return found ? found.label : "알 수 없음";
-  };
+    const getStatusText = (statusValue) => {
+        const option = statusOptions.find(o => o.value === statusValue);
+        return option ? option.label : "알 수 없음";
+    };
+    
+    // ✅ [수정] handleRowClick 함수를 '수정' 버튼의 onClick 핸들러로 사용
+    const handleEditClick = (plan) => {
+        setSelectedGridPlan(plan);
+        const formattedPlan = { 
+            ...plan,
+            startDate: plan.startDate ? plan.startDate.split("T")[0] : "",
+            endDate: plan.endDate ? plan.endDate.split("T")[0] : "",
+        };
+        setEditingPlan({ ...formattedPlan, isNew: false });
+        setIsModalOpen(true);
+    };
 
-  const toDateString = (value) => {
-    if (!value) return "";
-    if (value?.target && typeof value.target.value === "string") {
-      return toDateString(value.target.value);
-    }
-    if (value instanceof Date) {
-      return value.toISOString().slice(0, 10);
-    }
-    if (typeof value === "string") {
-      if (value.includes("T")) return value.slice(0, 10);
-      return value;
-    }
-    return "";
-  };
-
-  const handleStartDateChange = (value) => setSearchStartDate(toDateString(value));
-  const handleEndDateChange = (value) => setSearchEndDate(toDateString(value));
-
-  useEffect(() => {
-    loadPlans();
-  }, []);
-
-  const loadPlans = useCallback(async () => {
-    try {
-      // ✨ 2. 토큰 관련 로직 모두 삭제
-      const params = {
-        projectId: searchParams.projectId || undefined,
-        vesselId: searchParams.vesselId || undefined,
-        startDate: searchParams.startDate || undefined,
-        endDate: searchParams.endDate || undefined,
-        status: searchParams.status || undefined,
-      };
-
-      const response = await axios.get(API_BASE, { params }); // ✨ headers 제거
-      setPlans(response.data);
-    } catch (err) {
-      console.error("생산계획 목록 조회 실패:", err);
-      alert(`데이터 조회 중 오류 발생: ${err.message}`);
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    loadPlans();
-  }, [loadPlans]);
-
-  useEffect(() => {
-    loadPlans();
-  }, [loadPlans]);
-
- // --- CRUD 핸들러 함수 (보안 로직 제거) ---
-  const handleSave = async () => {
-    if (!editingPlan) return;
-
-    try {
-      if (editingPlan.isNew) { // 생성
-        const { planId, ...createData } = editingPlan;
-        await axios.post(API_BASE, createData); // ✨ headers 제거
-        alert("새로운 계획이 등록되었습니다.");
-      } else { // 수정
-        await axios.put(`${API_BASE}/${editingPlan.planId}`, editingPlan); // ✨ headers 제거
-        alert("계획이 수정되었습니다.");
-      }
-      closeModalAndRefresh();
-    } catch (err) {
-      console.error("저장 실패:", err);
-      alert(`저장 중 오류 발생: ${err.message}`);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!editingPlan || editingPlan.isNew) return;
-
-    if (window.confirm(`정말로 계획 ID '${editingPlan.planId}'를 삭제하시겠습니까?`)) {
-      try {
-        await axios.delete(`${API_BASE}/${editingPlan.planId}`); // ✨ headers 제거
-        alert("계획이 삭제되었습니다.");
-        closeModalAndRefresh();
-      } catch (err) {
-        console.error("삭제 실패:", err);
-        alert(`삭제 중 오류 발생: ${err.message}`);
-      }
-    }
-  };
-
-  // --- 모달 관리 함수 ---
-  const openCreateModal = () => {
-    setEditingPlan({ isNew: true, planId: "", projectId: "", vesselId: "", planScope: "", startDate: "", endDate: "", progressRate: 0, status: 0, remark: "" });
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (plan) => {
-    setEditingPlan({ ...plan, isNew: false });
-    setIsModalOpen(true);
-  };
-
-  
-
-  const closeModalAndRefresh = () => {
-    setIsModalOpen(false);
-    setEditingPlan(null);
-    loadPlans();
-  };
-
-  const handleModalInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingPlan(prev => ({ ...prev, [name]: value }));
-  };
-
-  // --- 렌더링 ---
-  return (
-     <div>
-      <h2 className="font-bold text-2xl mb-4">생산 계획 관리</h2>
-      <SearchLayout>
-        <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({...searchParams, projectId: e.target.value})} />
-        <SearchTextBox label="선박 ID" value={searchParams.vesselId} onChange={(e) => setSearchParams({...searchParams, vesselId: e.target.value})} />
-        <SearchDatePicker label="시작일" value={searchParams.startDate} onChange={(e) => setSearchParams({...searchParams, startDate: e.target.value})} />
-        <SearchDatePicker label="종료일" value={searchParams.endDate} onChange={(e) => setSearchParams({...searchParams, endDate: e.target.value})} />
-        <SearchTextBox label="상태 (0~2)" value={searchParams.status} onChange={(e) => setSearchParams({...searchParams, status: e.target.value})} />
-        <SearchButton onClick={loadPlans} />
-        <InsertButton onClick={openCreateModal} />
-      </SearchLayout>
-      <div className="mt-6">
-        <BodyGrid
-          columns={columns}
-          data={plans.map((plan) => ({ ...plan, status: getStatusText(plan.status) }))}
-          onRowClick={openEditModal}
-        />
-      </div>
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-1/2">
-            <h3 className="text-xl font-bold mb-4">{editingPlan.isNew ? "신규 계획 등록" : "계획 수정"}</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {columns.map(col => (
-                !col.readOnly && (
-                  <div key={col.accessor}>
-                    <label className="block text-sm font-medium text-gray-700">{col.header}</label>
-                    {col.type === 'select' ? (
-                      <select name={col.accessor} value={editingPlan[col.accessor] || ''} onChange={handleModalInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                        {col.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                      </select>
-                    ) : (
-                      <input
-                        type={col.type || "text"}
-                        name={col.accessor}
-                        value={editingPlan[col.accessor] || ''}
-                        onChange={handleModalInputChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                      />
-                    )}
-                  </div>
-                )
-              ))}
-            </div>
-            <div className="mt-6 flex justify-between">
-              <div>
-                {!editingPlan.isNew && (
-                  <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                    삭제
-                  </button>
-                )}
-              </div>
-              <div>
-                <button onClick={closeModalAndRefresh} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mr-2">
-                  취소
+    const gridColumns = [
+        { header: "계획 ID", accessor: "planId" },
+        { header: "프로젝트 ID", accessor: "projectId" },
+        { header: "선박 ID", accessor: "vesselId" },
+        { header: "시작일", accessor: "startDate" },
+        { header: "종료일", accessor: "endDate" },
+        { header: "상태", accessor: "status" },
+        // ✅ [추가] 수정 버튼을 포함할 '작업' 컬럼 추가
+        {
+            header: "작업",
+            accessor: "actions",
+            render: (row) => (
+                <button
+                    onClick={() => handleEditClick(row)}
+                    className="px-3 py-1 bg-sky-500 text-white text-xs font-semibold rounded-md shadow-sm hover:bg-sky-600"
+                >
+                    수정
                 </button>
-                <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                  저장
-                </button>
-              </div>
-            </div>
-          </div>
+            )
+        }
+    ];
+
+    const allColumns = [
+        { header: "계획 ID", accessor: "planId", readOnly: true },
+        { header: "프로젝트 ID", accessor: "projectId" },
+        { header: "선박 ID", accessor: "vesselId" },
+        { header: "계획 범위", accessor: "planScope" },
+        { header: "시작일", accessor: "startDate", type: "date" },
+        { header: "종료일", accessor: "endDate", type: "date" },
+        { header: "진행률(%)", accessor: "progressRate", type: "number" },
+        { header: "상태", accessor: "status", type: "select", options: statusOptions },
+        { header: "비고", accessor: "remark", fullWidth: true },
+        { header: "생성일", accessor: "createdAt", readOnly: true },
+        { header: "수정일", accessor: "updatedAt", readOnly: true },
+    ];
+    
+    const loadPlans = useCallback(async () => {
+        try {
+            const params = {
+                projectId: searchParams.projectId || undefined,
+                vesselId: searchParams.vesselId || undefined,
+                startDate: searchParams.startDate || undefined,
+                endDate: searchParams.endDate || undefined,
+                status: searchParams.status || undefined,
+                // 참고: 정렬 기능은 백엔드 API에 sortBy, sortDir 파라미터가 구현되어 있어야 동작합니다.
+                sortBy: sortConfig.key,
+                sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
+            };
+            const response = await axios.get(API_BASE, { params });
+            setPlans(response.data);
+            setSelectedGridPlan(null);
+        } catch (err) {
+            console.error("생산계획 목록 조회 실패:", err);
+            alert(`데이터 조회 중 오류 발생: ${err.message}`);
+        }
+    }, [searchParams, sortConfig]);
+
+    useEffect(() => {
+        loadPlans();
+    }, [loadPlans]);
+    
+    const handleSave = async () => {
+        if (!editingPlan) return;
+        try {
+            if (editingPlan.isNew) {
+                // 'isNew'와 같은 임시 속성은 서버로 보내지 않음
+                const { isNew, ...createData } = editingPlan;
+                await axios.post(API_BASE, createData);
+                alert("새로운 계획이 등록되었습니다.");
+            } else {
+                await axios.put(`${API_BASE}/${editingPlan.planId}`, editingPlan);
+                alert("계획이 수정되었습니다.");
+            }
+            closeModalAndRefresh();
+        } catch (err) {
+            console.error("저장 실패:", err);
+            alert(`저장 중 오류 발생: ${err.message}`);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!editingPlan || editingPlan.isNew) return;
+        if (window.confirm(`정말로 계획 ID '${editingPlan.planId}'를 삭제하시겠습니까?`)) {
+            try {
+                await axios.delete(`${API_BASE}/${editingPlan.planId}`);
+                alert("계획이 삭제되었습니다.");
+                closeModalAndRefresh();
+            } catch (err) {
+                console.error("삭제 실패:", err);
+                alert(`삭제 중 오류 발생: ${err.message}`);
+            }
+        }
+    };
+    
+    const openCreateModal = () => {
+        const today = new Date().toISOString().split("T")[0];
+        setEditingPlan({ isNew: true, planId: "", projectId: "", vesselId: "", planScope: "", startDate: today, endDate: today, progressRate: 0, status: 0, remark: "" });
+        setIsModalOpen(true);
+    };
+
+    const closeModalAndRefresh = () => {
+        setIsModalOpen(false);
+        setEditingPlan(null);
+        loadPlans();
+    };
+
+    const handleModalInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditingPlan(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending',
+        }));
+    };
+
+    const handleSearchReset = () => {
+        setSearchParams({ projectId: "", vesselId: "", startDate: "", endDate: "", status: "" });
+    };
+
+    return (
+        <div className="p-4 bg-gray-50 min-h-screen">
+            <h2 className="font-bold text-2xl mb-6 text-gray-800">생산 계획 관리</h2>
+            <SearchLayout>
+                <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({...searchParams, projectId: e.target.value})} />
+                <SearchTextBox label="선박 ID" value={searchParams.vesselId} onChange={(e) => setSearchParams({...searchParams, vesselId: e.target.value})} />
+                <SearchDatePicker label="시작일" value={searchParams.startDate} onChange={(e) => setSearchParams({...searchParams, startDate: e.target.value})} />
+                <SearchDatePicker label="종료일" value={searchParams.endDate} onChange={(e) => setSearchParams({...searchParams, endDate: e.target.value})} />
+                <div className="flex-grow min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                    <select value={searchParams.status} onChange={(e) => setSearchParams({...searchParams, status: e.target.value})} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500">
+                        <option value="">전체</option>
+                        {statusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                    </select>
+                </div>
+                <div className="flex items-end space-x-2 pt-6">
+                    <StyledButton onClick={loadPlans} colorClass="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">
+                        <span>조회</span>
+                    </StyledButton>
+                    <StyledButton onClick={handleSearchReset} colorClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500">
+                        <span>초기화</span>
+                    </StyledButton>
+                    <StyledButton onClick={openCreateModal} colorClass="bg-green-600 hover:bg-green-700 focus:ring-green-500">
+                        <span>추가</span>
+                    </StyledButton>
+                </div>
+            </SearchLayout>
+
+            <BodyGrid
+                columns={gridColumns}
+                data={plans.map(p => ({
+                    ...p,
+                    status: getStatusText(p.status),
+                    startDate: p.startDate ? p.startDate.split("T")[0] : "",
+                    endDate: p.endDate ? p.endDate.split("T")[0] : "",
+                }))}
+                selectedId={selectedGridPlan?.planId}
+                sortConfig={sortConfig}
+                onHeaderClick={handleSort}
+            />
+
+            {isModalOpen && editingPlan && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] flex flex-col border">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-5">
+                            {editingPlan.isNew ? "신규 계획 등록" : "계획 수정"}
+                        </h3>
+                        <div className="overflow-y-auto pr-2 flex-grow">
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                {allColumns.filter(c => !c.readOnly || !editingPlan.isNew).map(col => (
+                                    <div key={col.accessor} className={col.fullWidth ? 'col-span-2' : ''}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{col.header}</label>
+                                        {col.type === 'select' ? (
+                                            <select name={col.accessor} value={editingPlan[col.accessor] || ''} onChange={handleModalInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500" disabled={col.readOnly}>
+                                                {col.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type={col.type || "text"}
+                                                name={col.accessor}
+                                                value={editingPlan[col.accessor] || ''}
+                                                onChange={handleModalInputChange}
+                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500"
+                                                disabled={col.readOnly}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-between w-full items-center pt-4 border-t">
+                            <div>
+                                {!editingPlan.isNew && (
+                                    <StyledButton onClick={handleDelete} colorClass="bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                                        <span>삭제</span>
+                                    </StyledButton>
+                                )}
+                            </div>
+                            <div className="flex gap-x-2">
+                                <StyledButton onClick={handleSave} colorClass="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">
+                                    <span>저장</span>
+                                </StyledButton>
+                                <StyledButton onClick={closeModalAndRefresh} colorClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500">
+                                    <span>취소</span>
+                                </StyledButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

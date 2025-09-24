@@ -1,312 +1,324 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
-// 공용 컴포넌트 import
-import SearchLayout from "../layouts/SearchLayout";
-import SearchTextBox from "../components/search/SearchTextBox";
-import SearchDatePicker from "../components/search/SearchDatePicker";
-import SearchButton from "../components/search/SearchButton";
-import InsertButton from "../components/search/InsertButton";
-import BodyGrid from "../layouts/BodyGrid";
-import ButtonLayout from "../components/search/ButtonLayout";
+// ===================================================================
+// I. UI Components (고객 메뉴 스타일과 동일하게 재정의)
+// ===================================================================
+
+const SearchLayout = ({ children }) => (
+    <div className="p-4 mb-4 bg-white rounded-lg shadow-md flex flex-wrap items-end gap-4 border border-gray-200">
+        {children}
+    </div>
+);
+
+const SearchTextBox = ({ label, ...props }) => (
+    <div className="flex-grow min-w-[200px]">
+        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <input type="text" {...props} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500" />
+    </div>
+);
+
+const StyledButton = ({ onClick, disabled, children, colorClass }) => (
+    <button onClick={onClick} disabled={disabled} className={`flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 transition-all duration-200 ${colorClass} disabled:bg-gray-400 disabled:cursor-not-allowed`}>
+        {children}
+    </button>
+);
+
+const BodyGrid = ({ columns, data, onRowClick, selectedId, sortConfig, onHeaderClick }) => (
+    <div className="h-[calc(100vh-280px)] overflow-auto border rounded-lg shadow-md bg-white">
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100 sticky top-0">
+                <tr>
+                    {columns.map((col) => (
+                        <th 
+                            key={col.accessor} 
+                            onClick={() => onHeaderClick(col.accessor)}
+                            className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer"
+                        >
+                            {col.header}
+                            {sortConfig.key === col.accessor ? (sortConfig.direction === 'ascending' ? ' ▲' : ' ▼') : ''}
+                        </th>
+                    ))}
+                </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+                {data.length === 0 ? (
+                    <tr>
+                        <td colSpan={columns.length} className="text-center py-4 text-gray-500">
+                            데이터가 없습니다.
+                        </td>
+                    </tr>
+                ) : (
+                    data.map((row) => (
+                        <tr
+                            key={row.projectId}
+                            onClick={() => onRowClick(row)}
+                            className={`cursor-pointer ${selectedId && row.projectId === selectedId ? 'bg-sky-100' : 'hover:bg-gray-50'}`}
+                        >
+                            {columns.map((col) => (
+                                <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                    {row[col.accessor]}
+                                </td>
+                            ))}
+                        </tr>
+                    ))
+                )}
+            </tbody>
+        </table>
+    </div>
+);
+
+// ===================================================================
+// II. 메인 컴포넌트
+// ===================================================================
 
 const API_BASE = "http://localhost:8081/api/projects";
 
 export default function ProjectRegister() {
-  // =================================================================================
-  // I. 상태 관리 (State Management)
-  // 컴포넌트의 모든 동적인 데이터를 관리하는 state 변수들을 선언합니다.
-  // =================================================================================
-  
-  // 그리드에 표시될 프로젝트 데이터 목록
-  const [projects, setProjects] = useState([]);
-
-  // 검색창의 입력값을 관리하는 객체
-  const [searchParams, setSearchParams] = useState({
-    projectId: "",
-    projectNm: "",
-    customerId: "",
-    startDate: "",
-    deliveryDate: "",
-  });
-
-  // 모달 관련 상태를 하나로 통합
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeProject, setActiveProject] = useState(null); // 모달에서 사용할 데이터
-  const [isEditMode, setIsEditMode] = useState(false); // 모달의 '보기/수정' 모드 제어
-
-  // 그리드에서 선택된 행(외부 삭제 버튼용)
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
-
-  // 현재 정렬 상태를 관리하는 state (key: 정렬 기준 컬럼, direction: 정렬 방향)
+    const [projects, setProjects] = useState([]);
+    const [searchParams, setSearchParams] = useState({
+        projectId: "", projectNm: "",
+    });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [activeProject, setActiveProject] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [selectedGridProject, setSelectedGridProject] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'priority', direction: 'ascending' });
 
+    const gridColumns = [
+        { header: "프로젝트 ID", accessor: "projectId" },
+        { header: "프로젝트명", accessor: "projectNm" },
+        { header: "고객 ID", accessor: "customerId" },
+        { header: "우선순위", accessor: "priority" },
+    ];
 
-  // =================================================================================
-  // II. 컬럼 정의 (Column Definitions)
-  // 그리드와 모달에서 사용할 컬럼의 속성을 미리 정의합니다.
-  // =================================================================================
+    const allColumns = [
+        { header: "프로젝트 ID", accessor: "projectId", readOnlyOnEdit: true },
+        { header: "프로젝트명", accessor: "projectNm" },
+        { header: "고객 ID", accessor: "customerId" },
+        { header: "담당자 ID", accessor: "employeeId" },
+        { header: "시작일", accessor: "startDate", type: "date" },
+        { header: "납기일", accessor: "deliveryDate", type: "date" },
+        { header: "우선순위", accessor: "priority", type: "number" },
+        { header: "진행률(%)", accessor: "progressRate", type: "number" },
+        { header: "총 예산", accessor: "totalBudget", type: "number" },
+        { header: "통화", accessor: "currencyCode" },
+        { header: "실제납기일", accessor: "actualDeliveryDate", type: "date" },
+        { header: "비고", accessor: "remark", fullWidth: true },
+        { header: "생성일", accessor: "createdAt", readOnly: true },
+        { header: "수정일", accessor: "updatedAt", readOnly: true },
+    ];
 
-  // 메인 화면 그리드에 표시할 핵심 컬럼 목록
-  const gridColumns = [
-    { header: "프로젝트 ID", accessor: "projectId" },
-    { header: "프로젝트명", accessor: "projectNm" },
-    { header: "고객 ID", accessor: "customerId" },
-    { header: "우선순위", accessor: "priority" },
-  ];
+    const loadProjects = useCallback(async () => {
+        try {
+            const params = {
+                projectId: searchParams.projectId || undefined,
+                projectNm: searchParams.projectNm || undefined,
+                sortBy: sortConfig.key,
+                sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
+            };
+            const response = await axios.get(API_BASE, { params });
+            setProjects(response.data);
+            setSelectedGridProject(null);
+        } catch (err) {
+            console.error("프로젝트 목록 조회 실패:", err);
+            alert("목록 조회 중 오류 발생");
+        }
+    }, [searchParams, sortConfig]);
 
-  // 상세 정보 및 수정 모달에 표시할 전체 컬럼 목록
-  const allColumns = [
-    { header: "프로젝트 ID", accessor: "projectId", readOnly: true },
-    { header: "프로젝트명", accessor: "projectNm" },
-    { header: "고객 ID", accessor: "customerId" },
-    { header: "담당자 ID", accessor: "employeeId" },
-    { header: "시작일", accessor: "startDate", type: "date" },
-    { header: "납기일", accessor: "deliveryDate", type: "date" },
-    { header: "우선순위", accessor: "priority", type: "number" },
-    { header: "진행률(%)", accessor: "progressRate", type: "number" },
-    { header: "총 예산", accessor: "totalBudget", type: "number" },
-    { header: "통화", accessor: "currencyCode" },
-    { header: "실제납기일", accessor: "actualDeliveryDate", type: "date" },
-    { header: "비고", accessor: "remark" },
-    { header: "생성일", accessor: "createdAt", readOnly: true },
-    { header: "수정일", accessor: "updatedAt", readOnly: true },
-  ];
-
-  // =================================================================================
-  // III. 데이터 통신 및 핵심 로직 (Data Fetching & Core Logic)
-  // =================================================================================
-
-  // 서버로부터 프로젝트 목록을 조회하는 함수
-  const loadProjects = useCallback(async () => {
-    try {
-      const params = {
-        // 기존 검색 파라미터
-        projectId: searchParams.projectId || undefined,
-        projectNm: searchParams.projectNm || undefined,
-        // ...
-        
-        // 정렬 파라미터
-        sortBy: sortConfig.key,
-        sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
-      };
-      const response = await axios.get(API_BASE, { params });
-      setProjects(response.data);
-      setSelectedProject(null);
-    } catch (err) {
-      console.error("프로젝트 목록 조회 실패:", err);
-    }
-  }, [searchParams, sortConfig]);
-
-  // 컴포넌트가 처음 마운트될 때 프로젝트 목록을 한번만 조회
-  useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
-
-  // =================================================================================
-  // IV. 이벤트 핸들러 (Event Handlers)
-  // 사용자의 액션(클릭, 입력 등)에 반응하는 함수들
-  // =================================================================================
-
-  // 그리드의 행을 '클릭'했을 때 실행되는 함수
-  const handleRowClick = (project) => {
-    // 날짜 형식을 'yyyy-MM-dd'로 맞춤
-    const formattedProject = {
-      ...project,
-      startDate: project.startDate ? project.startDate.split("T")[0] : "",
-      deliveryDate: project.deliveryDate ? project.deliveryDate.split("T")[0] : "",
-      actualDeliveryDate: project.actualDeliveryDate ? project.actualDeliveryDate.split("T")[0] : "",
-    };
-    setActiveProject({ ...formattedProject, isNew: false });
-    setIsEditMode(false); // 보기 모드로 시작
-    setIsModalOpen(true);
-    setSelectedProject(project); // 외부 삭제 버튼을 위해 선택 상태도 업데이트
-  };
-
-  // '초기화' 버튼 클릭 시 검색창의 내용을 모두 비우는 함수
-  const handleSearchReset = () => {
-    setSearchParams({
-      projectId: "", projectNm: "", customerId: "",
-      startDate: "", deliveryDate: "",
-    });
-  };
-
-  // 상단의 '삭제' 버튼 클릭 시 선택된 행을 삭제하는 함수
-  const handleDeleteSelected = async () => {
-    if (!selectedProject) {
-      alert("삭제할 프로젝트를 목록에서 선택해주세요.");
-      return;
-    }
-    if (window.confirm(`정말로 프로젝트 '${selectedProject.projectNm}'을(를) 삭제하시겠습니까?`)) {
-      try {
-        await axios.delete(`${API_BASE}/${selectedProject.projectId}`);
-        alert("프로젝트가 삭제되었습니다.");
+    useEffect(() => {
         loadProjects();
-      } catch (err) {
-        console.error("삭제 실패:", err);
-      }
-    }
-  };
+    }, [loadProjects]);
 
-  // 헤더 클릭 시 정렬 상태를 변경하는 함수
-  const handleSort = (key) => {
-    let direction = 'ascending';
-    // 만약 같은 컬럼을 다시 클릭했다면, 정렬 방향을 반대로 변경
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
+    const handleRowClick = (project) => {
+        setSelectedGridProject(project);
+        const formattedProject = { ...project };
+        ['startDate', 'deliveryDate', 'actualDeliveryDate', 'createdAt', 'updatedAt'].forEach(dateKey => {
+            if (formattedProject[dateKey]) {
+                formattedProject[dateKey] = formattedProject[dateKey].split("T")[0];
+            }
+        });
+        setActiveProject({ ...formattedProject, isNew: false });
+        setIsEditMode(false);
+        setIsModalOpen(true);
+    };
 
-  // =================================================================================
-  // V. 모달 관련 함수 (Modal Functions)
-  // 모달의 생성, 수정, 삭제, 상태 변경 등 모달과 관련된 모든 함수
-  // =================================================================================
+    const handleSearchReset = () => {
+        setSearchParams({ projectId: "", projectNm: "" });
+    };
 
-  const handleSave = async () => {
-    if (!activeProject) return;
-    try {
-      if (activeProject.isNew) {
-        await axios.post(API_BASE, activeProject);
-        alert("새로운 프로젝트가 등록되었습니다.");
-      } else {
-        await axios.put(`${API_BASE}/${activeProject.projectId}`, activeProject);
-        alert("프로젝트가 수정되었습니다.");
-      }
-      closeModalAndRefresh();
-    } catch (err) {
-      console.error("저장 실패:", err);
-    }
-  };
+    const handleDeleteActiveProject = async () => {
+        if (!activeProject || activeProject.isNew) {
+            alert("삭제할 수 없는 프로젝트입니다.");
+            return;
+        }
+        if (window.confirm(`정말로 프로젝트 '${activeProject.projectNm}'을(를) 삭제하시겠습니까?`)) {
+            try {
+                await axios.delete(`${API_BASE}/${activeProject.projectId}`);
+                alert("프로젝트가 삭제되었습니다.");
+                closeModalAndRefresh();
+            } catch (err) {
+                console.error("삭제 실패:", err);
+                alert("삭제 중 오류가 발생했습니다.");
+            }
+        }
+    };
 
-  const openCreateModal = () => {
-    const today = new Date().toISOString().split("T")[0];
-    setActiveProject({
-      isNew: true, projectId: "", projectNm: "", customerId: "", employeeId: "",
-      startDate: today, deliveryDate: today, priority: 0, progressRate: 0,
-      totalBudget: 0, currencyCode: "KRW", actualDeliveryDate: "", remark: ""
-    });
-    setIsEditMode(true); // 생성 시에는 바로 수정 모드
-    setIsModalOpen(true);
-  };
+    const handleSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
 
-  const closeModalAndRefresh = () => {
-    setIsModalOpen(false);
-    setActiveProject(null);
-    setIsEditMode(false);
-    loadProjects();
-  };
+    const handleSave = async () => {
+        if (!activeProject) return;
+        if (!activeProject.projectId || !activeProject.projectNm) {
+            alert("프로젝트 ID와 이름은 필수 항목입니다.");
+            return;
+        }
+        try {
+            if (activeProject.isNew) {
+                await axios.post(API_BASE, activeProject);
+                alert("새로운 프로젝트가 등록되었습니다.");
+            } else {
+                await axios.put(`${API_BASE}/${activeProject.projectId}`, activeProject);
+                alert("프로젝트가 수정되었습니다.");
+            }
+            closeModalAndRefresh();
+        } catch (err) {
+            console.error("저장 실패:", err);
+            alert("저장 실패: " + (err.response?.data?.message || err.message));
+        }
+    };
 
-  const handleModalInputChange = (e) => {
-    const { name, value } = e.target;
-    setActiveProject(prev => ({ ...prev, [name]: value }));
-  };
+    const openCreateModal = () => {
+        const today = new Date().toISOString().split("T")[0];
+        setActiveProject({
+            isNew: true, projectId: "", projectNm: "", customerId: "", employeeId: "",
+            startDate: today, deliveryDate: today, priority: 0, progressRate: 0,
+            totalBudget: 0, currencyCode: "KRW", actualDeliveryDate: "", remark: ""
+        });
+        setIsEditMode(true);
+        setIsModalOpen(true);
+    };
 
-  // --- 렌더링 ---
-  return (
-    <div>
-      <h2 className="font-bold text-2xl mb-4">프로젝트 관리</h2>
+    const closeModalAndRefresh = () => {
+        setIsModalOpen(false);
+        setActiveProject(null);
+        setIsEditMode(false);
+        loadProjects();
+    };
 
-      <SearchLayout>
-        {/* 검색 필드 */}
-        <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({ ...searchParams, projectId: e.target.value })} />
-        <SearchTextBox label="프로젝트명" value={searchParams.projectNm} onChange={(e) => setSearchParams({ ...searchParams, projectNm: e.target.value })} />
-        {/* <SearchTextBox label="고객 ID" value={searchParams.customerId} onChange={(e) => setSearchParams({ ...searchParams, customerId: e.target.value })} /> */}
-        {isAdvancedSearch && (
-          <>
-            <SearchTextBox label="고객 ID" value={searchParams.customerId} onChange={(e) => setSearchParams({ ...searchParams, customerId: e.target.value })} />
-            <SearchDatePicker label="시작일" value={searchParams.startDate} onChange={(e) => setSearchParams({ ...searchParams, startDate: e.target.value })} />
-            <SearchDatePicker label="납기일" value={searchParams.deliveryDate} onChange={(e) => setSearchParams({ ...searchParams, deliveryDate: e.target.value })} />
-          </>
-        )}
-        
-    
-        
-          <SearchButton onClick={loadProjects} />
-          <button onClick={handleDeleteSelected} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-gray-400" disabled={!selectedProject}>
-              삭제
-          </button>
-          <button onClick={handleSearchReset} className="px-4 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600">
-              초기화
-          </button>
-          <button onClick={() => setIsAdvancedSearch(!isAdvancedSearch)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
-              {isAdvancedSearch ? '간편 검색' : '상세 검색'}
-          </button>
-          <InsertButton onClick={openCreateModal} />
-       
+    const handleModalInputChange = (e) => {
+        const { name, value } = e.target;
+        setActiveProject(prev => ({ ...prev, [name]: value }));
+    };
 
-      </SearchLayout>
+    return (
+        <div className="p-4 bg-gray-50 min-h-screen">
+            <h2 className="font-bold text-2xl mb-6 text-gray-800">프로젝트 관리</h2>
 
-      <div className="mt-6">
-        <BodyGrid
-          columns={gridColumns}
-          data={projects}
-          onRowClick={handleRowClick}
-          selectedId={selectedProject?.projectId}
-          sortConfig={sortConfig}
-          onHeaderClick={handleSort}
-        />
-      </div>
-
-      {/* 3. 하나로 통합된 모달 */}
-      {isModalOpen && activeProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-1/2 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">
-              {activeProject.isNew ? "신규 프로젝트 등록" : "프로젝트 상세 정보"}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {allColumns.map(col => (
-                <div key={col.accessor}>
-                  <label className="block text-sm font-medium text-gray-700">{col.header}</label>
-                  {isEditMode ? (
-                    // 수정 모드일 때: Input 필드
-                    <input
-                      type={col.type || "text"}
-                      name={col.accessor}
-                      value={activeProject[col.accessor] || ''}
-                      onChange={handleModalInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                      readOnly={!activeProject.isNew && col.accessor === 'projectId'}
-                    />
-                  ) : (
-                    // 보기 모드일 때: 텍스트
-                    <p className="mt-1 p-2 min-h-[42px] text-gray-800 bg-gray-100 rounded-md">
-                      {activeProject[col.accessor] || "-"}
-                    </p>
-                  )}
+            <SearchLayout>
+                <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({ ...searchParams, projectId: e.target.value })} />
+                <SearchTextBox label="프로젝트명" value={searchParams.projectNm} onChange={(e) => setSearchParams({ ...searchParams, projectNm: e.target.value })} />
+                <div className="flex items-end space-x-2 pt-6 ml-auto">
+                    <StyledButton onClick={loadProjects} colorClass="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
+                        <span>조회</span>
+                    </StyledButton>
+                    <StyledButton onClick={handleSearchReset} colorClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500">
+                        <span>초기화</span>
+                    </StyledButton>
+                    <StyledButton onClick={openCreateModal} colorClass="bg-green-600 hover:bg-green-700 focus:ring-green-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                        <span>추가</span>
+                    </StyledButton>
                 </div>
-              ))}
-            </div>
-            
-            {/* 모달 내부 버튼 (isEditMode에 따라 다르게 보임) */}
-            <div className="mt-6 flex justify-end gap-x-2">
-              {isEditMode ? (
-                // 모달 바깥 모드 버튼
-                <>
-                  <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    저장
-                  </button>
-                  <button onClick={closeModalAndRefresh} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                    취소
-                  </button>
-                </>
-              ) : (
-                // 모달 안 모드 버튼
-                <>
-                  <button onClick={() => setIsEditMode(true)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    수정
-                  </button>
-                  <button onClick={closeModalAndRefresh} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                    닫기
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+            </SearchLayout>
+
+            <BodyGrid
+                columns={gridColumns}
+                data={projects}
+                onRowClick={handleRowClick}
+                selectedId={selectedGridProject?.projectId}
+                sortConfig={sortConfig}
+                onHeaderClick={handleSort}
+            />
+
+            {isModalOpen && activeProject && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] flex flex-col border">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-5">
+                            {activeProject.isNew ? "신규 프로젝트 등록" : "프로젝트 상세 정보"}
+                        </h3>
+                        <div className="overflow-y-auto pr-2 flex-grow">
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                {allColumns.map(col => {
+                                    const isReadOnly = col.readOnly || (!activeProject.isNew && col.readOnlyOnEdit);
+                                    const editable = isEditMode && !isReadOnly;
+                                    const inputClass = "w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500";
+                                    return (
+                                        <div key={col.accessor} className={col.fullWidth ? 'col-span-2' : ''}>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">{col.header}</label>
+                                            {isEditMode ? (
+                                                <input
+                                                    type={col.type || "text"}
+                                                    name={col.accessor}
+                                                    value={activeProject[col.accessor] || ''}
+                                                    onChange={handleModalInputChange}
+                                                    className={inputClass}
+                                                    disabled={!editable}
+                                                />
+                                            ) : (
+                                                <p className="mt-1 p-2 min-h-[40px] text-gray-800 bg-gray-100 rounded-md w-full">
+                                                    {activeProject[col.accessor] || "-"}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-between w-full items-center pt-4 border-t">
+                            {/* Left-aligned button */}
+                            <div>
+                                {!isEditMode && activeProject && !activeProject.isNew && (
+                                    <StyledButton onClick={handleDeleteActiveProject} colorClass="bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        <span>삭제</span>
+                                    </StyledButton>
+                                )}
+                            </div>
+
+                            {/* Right-aligned buttons */}
+                            <div className="flex gap-x-2">
+                                {isEditMode ? (
+                                    <>
+                                        <StyledButton onClick={handleSave} colorClass="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">
+                                          <span>저장</span>
+                                        </StyledButton>
+                                        <StyledButton onClick={closeModalAndRefresh} colorClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500">
+                                          <span>취소</span>
+                                        </StyledButton>
+                                    </>
+                                ) : (
+                                    <>
+                                        <StyledButton onClick={() => setIsEditMode(true)} colorClass="bg-blue-600 hover:bg-blue-700 focus:ring-blue-500">
+                                          <span>수정</span>
+                                        </StyledButton>
+                                        <StyledButton onClick={closeModalAndRefresh} colorClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500">
+                                          <span>닫기</span>
+                                        </StyledButton>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
+
