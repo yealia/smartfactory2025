@@ -79,21 +79,43 @@ export default function InventoryMovement() {
     // II. 컬럼 정의 (Column Definitions)
     // =================================================================================
     
+    const getMovementStatus = (type) => {
+        const typeStr = String(type).toUpperCase();
+        if (typeStr.includes("INBOUND") || typeStr.includes("RECEIPT") || type === "입고" || type === 1) {
+            return "합격";
+        }
+        if (typeStr.includes("OUTBOUND") || typeStr.includes("ISSUE") || type === "출고" || type === 2) {
+            return "불합격";
+        }
+        return type;
+    };
+
+    const getMovementTypeColor = (type) => {
+        const typeStr = String(type).toUpperCase();
+        if (typeStr.includes("INBOUND") || typeStr.includes("RECEIPT") || type === "입고" || type === 1) {
+            return "bg-blue-100 text-blue-800";
+        }
+        if (typeStr.includes("OUTBOUND") || typeStr.includes("ISSUE") || type === "출고" || type === 2) {
+            return "bg-red-100 text-red-800";
+        }
+        if (typeStr.includes("ADJUST")) return "bg-green-100 text-green-800";
+        if (typeStr.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
+        return "bg-gray-100 text-gray-800";
+    };
+
     const gridColumns = [
         { 
             header: "이력 ID", 
             accessor: "movementId",
-            render: (row) => (
-                <span className="font-bold text-indigo-600 font-mono">{row.movementId}</span>
-            )
+            render: (row) => (<span className="font-bold text-indigo-600 font-mono">{row.movementId}</span>)
         },
         { header: "자재 ID", accessor: "materialId" },
         { 
-            header: "이동", 
+            header: "판정", 
             render: (row) => (
                 <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${ getMovementTypeColor(row.movementType) }`}>
-                        {row.movementType}
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getMovementTypeColor(row.movementType)}`}>
+                        {getMovementStatus(row.movementType)}
                     </span>
                     <span className="font-mono font-bold text-lg text-gray-800">{row.qty}</span>
                 </div>
@@ -119,21 +141,32 @@ export default function InventoryMovement() {
         },
         { 
             header: "출처 정보", 
-            render: (row) => (
-                <div>
-                    <p>{row.sourceType}</p>
-                    <p className="text-xs text-gray-500">
-                        {row.purchaseOrderId ? `발주: ${row.purchaseOrderId}` : (row.qcId ? `검사: ${row.qcId}`: '-')}
-                    </p>
-                </div>
-            )
+            render: (row) => {
+                if (row.purchaseOrderId) {
+                    return (
+                        <div>
+                            <p className="font-medium">상세ID: {row.orderDetailId || '-'}</p>
+                            <p className="text-xs text-gray-500">발주: {row.purchaseOrderId}</p>
+                        </div>
+                    );
+                }
+                if (row.qcId) {
+                    return (
+                        <div>
+                            <p className="font-medium">검사ID: {row.qcId}</p>
+                        </div>
+                    );
+                }
+                return <div>-</div>;
+            }
         },
+        // ✅ [수정] '발생시각'을 '품질검사 ID'로, 헤더를 '검사 정보 / 처리자'로 변경
         { 
-            header: "발생시각 / 처리자", 
+            header: "검사 정보 / 처리자", 
             render: (row) => (
                 <div>
-                    <p>{row.occurredAt ? new Date(row.occurredAt).toLocaleString('ko-KR') : '-'}</p>
-                    <p className="text-xs text-gray-500">담당: {row.userId}</p>
+                    <p className="font-medium">검사ID: {row.qcId || '-'}</p>
+                    <p className="text-xs text-gray-500">담당: {row.userId || '-'}</p>
                 </div>
             )
         },
@@ -160,14 +193,6 @@ export default function InventoryMovement() {
         { header: "비고", accessor: "remark", type: "textarea" },
     ];
     
-    const getMovementTypeColor = (type) => {
-        if (type?.includes("INBOUND") || type?.includes("RECEIPT")) return "bg-blue-100 text-blue-800";
-        if (type?.includes("OUTBOUND") || type?.includes("ISSUE")) return "bg-yellow-100 text-yellow-800";
-        if (type?.includes("ADJUST")) return "bg-green-100 text-green-800";
-        if (type?.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
-        return "bg-gray-100 text-gray-800";
-    };
-
     // =================================================================================
     // III. 데이터 통신 및 핵심 로직 (Data Fetching & Core Logic)
     // =================================================================================
