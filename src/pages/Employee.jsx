@@ -60,8 +60,8 @@ const CancelButton = ({ onClick }) => <button onClick={onClick} className="px-4 
 const SaveButton = ({ onClick }) => <button onClick={onClick} className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 shadow">저장</button>;
 
 
-const API_BASE = "http://localhost:8081/api/employees";
-const POSITIONS_API_BASE = "http://localhost:8081/api/positions";
+const API_BASE = "http://localhost:8083/api/proxy/employees";
+const POSITIONS_API_BASE = "http://localhost:8083/api/proxy/positions";
 const detailLabel = "block text-sm font-medium text-gray-700 mb-1";
 const detailTextBox = "w-full rounded-lg border border-sky-300 shadow-sm px-4 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400";
 
@@ -110,19 +110,20 @@ export default function Employee() {
 
 
   const loadEmployees = async (employeeId, employeeNm) => {
-    showMessage("사원 데이터를 조회하고 있습니다...");
-    try {
-      const params = { employeeId: employeeId || undefined, employeeNm: employeeNm || undefined };
-      const { data } = await axios.get(API_BASE, { params });
-      setEmployees(data);
-      setSelectedEmployee(null); 
-      setIsEditing(false);
-      showMessage("사원 목록을 성공적으로 조회했습니다.");
-    } catch (err) {
-      console.error("사원 목록 조회 실패", err);
-      showMessage("사원 목록 조회 중 오류가 발생했습니다.");
-    }
-  };
+        showMessage("사원 데이터를 조회하고 있습니다...");
+        try {
+            // ✅ [수정] 파라미터 이름을 백엔드와 일치시킵니다.
+            const params = { employeeId: employeeId || undefined, employeeNm: employeeNm || undefined };
+            const { data } = await axios.get(API_BASE, { params });
+            setEmployees(data);
+            setSelectedEmployee(null);
+            setIsEditing(false);
+            showMessage("사원 목록을 성공적으로 조회했습니다.");
+        } catch (err) {
+            console.error("사원 목록 조회 실패", err);
+            showMessage("사원 목록 조회 중 오류가 발생했습니다.");
+        }
+    };
   
   const loadPositions = async () => {
     try {
@@ -165,14 +166,15 @@ export default function Employee() {
 
     try {
       if (selectedEmployee.isNew) {
-        const response = await axios.post(API_BASE, selectedEmployee);
-        showMessage(`사원 정보(ID: ${response.data.employeeId})가 성공적으로 저장되었습니다.`);
+          const response = await axios.post(API_BASE, selectedEmployee);
+          showMessage(`사원 정보(ID: ${response.data.employeeId})가 성공적으로 저장되었습니다.`);
       } else {
-        const response = await axios.put(`${API_BASE}/${selectedEmployee.employeeId}`, selectedEmployee);
-        showMessage(`사원 정보(ID: ${response.data.employeeId})가 성공적으로 수정되었습니다.`);
+          // ✅ [수정] URL 생성 오류 수정: '/api' 중복 제거
+          const response = await axios.put(`${API_BASE}/${selectedEmployee.employeeId}`, selectedEmployee);
+          showMessage(`사원 정보(ID: ${response.data.employeeId})가 성공적으로 수정되었습니다.`);
       }
-      loadEmployees(searchParams.employeeId, searchParams.employeeNm);
-    } catch (err) {
+          loadEmployees(searchParams.employeeId, searchParams.employeeNm);
+      } catch (err) {
        if (err.response && err.response.status === 400 && err.response.data) {
         const serverErrors = err.response.data;
         let errorMsg = "저장 실패: ";
@@ -192,10 +194,11 @@ export default function Employee() {
     }
     if (window.confirm(`'${selectedEmployee.employeeNm}' (ID: ${selectedEmployee.employeeId}) 사원 정보를 정말 삭제하시겠습니까?`)) {
       try {
-        await axios.delete(`${API_BASE}/${selectedEmployee.employeeId}`);
-        showMessage("사원 정보가 삭제되었습니다.");
-        loadEmployees(searchParams.employeeId, searchParams.employeeNm);
-      } catch (err) {
+            // ✅ [수정] URL 생성 오류 수정: '/api' 중복 제거
+            await axios.delete(`${API_BASE}/${selectedEmployee.employeeId}`);
+            showMessage("사원 정보가 삭제되었습니다.");
+            loadEmployees(searchParams.employeeId, searchParams.employeeNm);
+        } catch (err) {
         if (err.response && err.response.status === 409) {
           showMessage("해당 사원을 참조하는 데이터가 있어 삭제할 수 없습니다.");
         } else {
