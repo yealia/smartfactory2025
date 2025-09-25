@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 // --- 상수 정의 --- //
-const API_BASE = "http://localhost:8081/api/sales_orders";
+const API_BASE = "http://localhost:8083/api/proxy/sales-orders";
 const MES_API_BASE = "http://localhost:8083/api/proxy/shipments";
 
 /** 메인 그리드에 표시될 컬럼 정보 */
@@ -71,7 +71,7 @@ const getMesStatusText = (status) => {
     }
 };
 
-const BodyGrid = ({ columns, data, onRowClick, selectedId, shipmentData }) => (
+const BodyGrid = ({ columns, data, onRowClick, selectedId, onStatusClick, shipmentData }) => (
     <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -99,14 +99,15 @@ const BodyGrid = ({ columns, data, onRowClick, selectedId, shipmentData }) => (
                                             <span
                                                 className="font-semibold text-blue-600 cursor-pointer hover:underline"
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // 행 전체 클릭(모달 열기) 방지
+                                                    e.stopPropagation();
+                                                    // 이제 onStatusClick을 정상적으로 찾을 수 있습니다.
                                                     onStatusClick(row);
                                                 }}
                                             >
                                                 {getStatusText(row.status)}
                                             </span>
                                             <p className={`text-xs mt-1 ${shipment ? 'text-gray-500' : 'text-gray-400'}`}>
-                                                 MES: {shipment ? getMesStatusText(shipment.status) : '정보 없음'}
+                                                MES: {shipment ? getMesStatusText(shipment.status) : '정보 없음'}
                                             </p>
                                         </div>
                                     ) : (
