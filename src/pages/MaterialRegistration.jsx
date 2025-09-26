@@ -6,6 +6,7 @@ import axios from "axios";
 
 // API 기본 주소
 const API_BASE = "http://localhost:8081/api/materials";
+const API_BASE2 = "http://localhost:8081/api/inventory";
 
 // ===================================================================
 // UI 컴포넌트 (별도 파일 대신 여기에 포함)
@@ -100,35 +101,51 @@ export default function MaterialRegister() {
     const [materials, setMaterials] = useState([]);
     const [selectedMaterial, setSelectedMaterial] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+
+    // 
     
     // 조회 조건
     const [searchMaterialNm, setSearchMaterialNm] = useState("");
     const [searchCategory, setSearchCategory] = useState("");
 
+    // ========================== 임의 수정함
     // --- 데이터 로딩 ---
     useEffect(() => {
         loadMaterials();
     }, []);
 
     const loadMaterials = async () => {
-        try {
-            const { data } = await axios.get(API_BASE, {
-                params: {
-                    materialNm: searchMaterialNm || undefined,
-                    category: searchCategory || undefined,
-                }
-            });
-            setMaterials(data);
-            if (data.length > 0) {
-                setSelectedMaterial(data[0]);
-            } else {
-                setSelectedMaterial(null);
-            }
-            setIsEditing(false); // 조회 후 수정 모드 초기화
-        } catch (err) {
-            console.error("자재 목록 조회 실패:", err);
-            alert("자재 목록을 불러오는 중 오류가 발생했습니다.");
+    try {
+        // 1️⃣ materials 조회
+        const { data: materialsRes } = await axios.get(API_BASE, {
+        params: {
+            materialNm: searchMaterialNm || undefined,
+            category: searchCategory || undefined,
         }
+        });
+
+        // 2️⃣ inventory 조회
+        const { data: inventoryRes } = await axios.get(API_BASE2);
+
+        // 3️⃣ inventory를 materialId별 합산 map으로 변환
+        const invMap = inventoryRes.reduce((acc, inv) => {
+        acc[inv.materialId] = (acc[inv.materialId] || 0) + inv.onHand;
+        return acc;
+        }, {});
+
+        // 4️⃣ materials 기준으로 currentStock 매핑
+        const merged = materialsRes.map(m => ({
+        ...m,
+        currentStock: invMap[m.materialId] ?? 0, // 재고에 없으면 0
+        }));
+
+        setMaterials(merged);
+        setSelectedMaterial(merged.length > 0 ? merged[0] : null);
+        setIsEditing(false);
+    } catch (err) {
+        console.error("자재 목록 조회 실패:", err);
+        alert("자재 목록을 불러오는 중 오류가 발생했습니다.");
+    }
     };
     
     // --- 버튼 핸들러 ---

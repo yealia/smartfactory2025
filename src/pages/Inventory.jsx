@@ -102,6 +102,7 @@ export default function InventoryPage() {
         { header: "창고", accessor: "warehouse" },
         { header: "위치", accessor: "location" },
         { header: "현재고", accessor: "onHand" },
+        { header: "현재고(자재쪽)", accessor: "materialCurrentStock" }, {/*  자재쪽 현재고 임의로 불러옴 */}
     ];
 
     useEffect(() => {
@@ -297,6 +298,14 @@ export default function InventoryPage() {
                                 <div>
                                     <label className={detailLabelStyle}>현재고</label>
                                     <input type="number" value={selectedInventory.onHand || 0} onChange={(e) => updateSelectedField("onHand", Number(e.target.value))} className={detailInputStyle} disabled={!isFieldEditable()} />
+                                </div>
+                {/* ==============  자재쪽 현재고 임의로 불러옴 */}
+                                <div>
+                                    <label className={detailLabelStyle}>현재고(자재 관리..)</label>
+                                    <input type="number"
+                                           value={selectedInventory.materialCurrentStock ?? 0}
+                                           readOnly
+                                           className={`${detailInputStyle} bg-gray-100`} />
                                 </div>
                                 <div>
                                     <label className={detailLabelStyle}>예약수량</label>
