@@ -39,6 +39,14 @@ const SaveButton = ({ onClick }) => (
     </button>
 );
 
+// 동기화 버튼 UI 컴포넌트 추가 (재사용 가능)
+const SyncButton = ({ onClick }) => (
+    <button onClick={onClick} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M15.312 11.227c.452.452.452 1.186 0 1.638l-2.083 2.083a1.156 1.156 0 01-1.637 0l-2.083-2.083a1.156 1.156 0 010-1.638l2.083-2.083a1.156 1.156 0 011.637 0l2.083 2.083zM4.688 3.121a1.156 1.156 0 011.637 0l2.083 2.083a1.156 1.156 0 010 1.638L6.325 8.925a1.156 1.156 0 01-1.637 0L2.605 6.842a1.156 1.156 0 010-1.638l2.083-2.083z" clipRule="evenodd" /><path d="M11.227 4.688a1.156 1.156 0 010 1.637L9.144 8.408a1.156 1.156 0 01-1.638 0L3.12 3.944a1.156 1.156 0 011.638-1.637l.002.002 4.384 4.384.002-.002a1.156 1.156 0 011.089.197zM8.773 15.312a1.156 1.156 0 010-1.637l2.083-2.083a1.156 1.156 0 011.638 0l4.384 4.384a1.156 1.156 0 01-1.638 1.637l-.002-.002-4.384-4.384-.002.002a1.156 1.156 0 01-1.089-.197z" /></svg>
+        MES 동기화
+    </button>
+);
+
 const BodyGrid = ({ columns, data, onRowClick, selectedItem }) => {
     return (
         <div className="h-[calc(100vh-250px)] overflow-auto border rounded-lg shadow-md bg-white">
@@ -104,6 +112,7 @@ export default function InventoryPage() {
         { header: "현재고", accessor: "onHand" },
         { header: "현재고(자재쪽)", accessor: "materialCurrentStock" }, {/*  자재쪽 현재고 임의로 불러옴 */}
     ];
+
 
     useEffect(() => {
         loadInventory();
@@ -226,6 +235,21 @@ export default function InventoryPage() {
         ));
     };
 
+    //  MES 동기화를 처리하는 함수 추가
+    const handleSyncFromMes = async () => {
+        if (!window.confirm("MES 품질검사 완료 내역을 가져와 재고에 반영하시겠습니까?")) {
+            return;
+        }
+        try {
+            const response = await axios.post("http://localhost:8081/api/sync/from-mes");
+            alert(response.data); // "MES 데이터 동기화가 완료되었습니다."
+            await loadInventory(); // 동기화 후 재고 목록을 새로고침하여 변경사항 확인
+        } catch (error) {
+            console.error("MES 동기화 실패:", error);
+            alert(`동기화 중 오류가 발생했습니다: ${error.response?.data?.message || error.message}`);
+        }
+    };
+
     const isFieldEditable = () => selectedInventory?.isNew || isEditing;
 
     return (
@@ -249,6 +273,7 @@ export default function InventoryPage() {
                 <div className="flex items-end space-x-2 pt-6">
                     <SearchButton onClick={loadInventory}>조회</SearchButton>
                     <InsertButton onClick={handleInsert} />
+                    <SyncButton onClick={handleSyncFromMes} />
                 </div>
             </SearchLayout>
 

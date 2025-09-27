@@ -21,6 +21,14 @@ const SearchTextBox = ({ label, ...props }) => (
     </div>
 );
 
+// 동기화 버튼 UI 컴포넌트 추가 (재사용 가능)
+const SyncButton = ({ onClick }) => (
+    <button onClick={onClick} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-200">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M15.312 11.227c.452.452.452 1.186 0 1.638l-2.083 2.083a1.156 1.156 0 01-1.637 0l-2.083-2.083a1.156 1.156 0 010-1.638l2.083-2.083a1.156 1.156 0 011.637 0l2.083 2.083zM4.688 3.121a1.156 1.156 0 011.637 0l2.083 2.083a1.156 1.156 0 010 1.638L6.325 8.925a1.156 1.156 0 01-1.637 0L2.605 6.842a1.156 1.156 0 010-1.638l2.083-2.083z" clipRule="evenodd" /><path d="M11.227 4.688a1.156 1.156 0 010 1.637L9.144 8.408a1.156 1.156 0 01-1.638 0L3.12 3.944a1.156 1.156 0 011.638-1.637l.002.002 4.384 4.384.002-.002a1.156 1.156 0 011.089.197zM8.773 15.312a1.156 1.156 0 010-1.637l2.083-2.083a1.156 1.156 0 011.638 0l4.384 4.384a1.156 1.156 0 01-1.638 1.637l-.002-.002-4.384-4.384-.002.002a1.156 1.156 0 01-1.089-.197z" /></svg>
+        MES 동기화
+    </button>
+);
+
 const BodyGrid = ({ columns, data, onRowClick, selectedId }) => (
     <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200">
@@ -87,6 +95,7 @@ export default function InventoryMovement() {
         if (typeStr.includes("OUTBOUND") || typeStr.includes("ISSUE") || type === "출고" || type === 2) {
             return "불합격";
         }
+        if (typeStr.includes("PARTIAL")) return "부분합격";
         return type;
     };
 
@@ -98,6 +107,7 @@ export default function InventoryMovement() {
         if (typeStr.includes("OUTBOUND") || typeStr.includes("ISSUE") || type === "출고" || type === 2) {
             return "bg-red-100 text-red-800";
         }
+        if (typeStr.includes("PARTIAL")) return "bg-yellow-100 text-yellow-800";
         if (typeStr.includes("ADJUST")) return "bg-green-100 text-green-800";
         if (typeStr.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
         return "bg-gray-100 text-gray-800";
@@ -171,6 +181,21 @@ export default function InventoryMovement() {
             )
         },
     ];
+
+    // MES 동기화를 처리하는 함수 추가
+    const handleSyncFromMes = async () => {
+        if (!window.confirm("MES 품질검사 완료 내역을 가져와 재고 이동 이력을 생성하시겠습니까?")) {
+            return;
+        }
+        try {
+            const response = await axios.post("http://localhost:8081/api/sync/from-mes");
+            alert(response.data);
+            await fetchMovements({}); // 동기화 후 이동 이력 목록을 새로고침
+        } catch (error) {
+            console.error("MES 동기화 실패:", error);
+            alert(`동기화 중 오류가 발생했습니다: ${error.response?.data?.message || error.message}`);
+        }
+    };
     
     const allColumns = [
         { header: "이력 ID", accessor: "movementId", readOnly: true },
@@ -341,6 +366,7 @@ export default function InventoryMovement() {
                         <button onClick={handleSearch} className="flex-1 bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition shadow">조회</button>
                         <button onClick={handleSearchReset} className="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-600 transition shadow">초기화</button>
                         <button onClick={openCreateModal} className="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600 transition shadow">신규 등록</button>
+                        <SyncButton onClick={handleSyncFromMes} />
                     </div>
                 </div>
             </SearchLayout>
