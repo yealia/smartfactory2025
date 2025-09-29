@@ -4,6 +4,8 @@ import axios from "axios";
 // --- 상수 정의 --- //
 const API_BASE = "http://localhost:8083/api/proxy/sales-orders";
 const MES_API_BASE = "http://localhost:8083/api/proxy/shipments";
+const CUSTOMERS_API_URL = "http://localhost:8081/api/customers";
+const VESSELS_API_URL = "http://localhost:8081/api/vessels";
 
 /** 메인 그리드에 표시될 컬럼 정보 */
 const gridColumns = [
@@ -17,11 +19,11 @@ const gridColumns = [
 
 /** 모달 내부에 표시될 모든 컬럼 정보 (상세 정보) */
 const allDetailColumns = [
-    { header: "수주번호", accessor: "salesOrderId", readOnly: true },
+    { header: "수주번호", accessor: "salesOrderId", placeholder:"SO2025-00001" },
     { header: "수주일자", accessor: "orderDate", type: "date" },
     { header: "고객ID", accessor: "customerId" },
     { header: "선박ID", accessor: "vesselId" },
-    { header: "고객발주번호", accessor: "customerPoNo" },
+    { header: "고객발주번호", accessor: "customerPoNo", placeholder:"PO-2025-001" },
     { header: "통화", accessor: "currencyCode" },
     { header: "상태", accessor: "status", type: "number", placeholder: "0: 등록, 1: 판매 요청, 2: 완료" },
     { header: "총금액", accessor: "totalAmount", type: "number" },
@@ -123,7 +125,7 @@ const BodyGrid = ({ columns, data, onRowClick, selectedId, onStatusClick, shipme
     </div>
 );
 
-const SalesOrderModal = ({ isOpen, onClose, orderData, isEditMode, setIsEditMode, onSave, onDelete }) => {
+const SalesOrderModal = ({ isOpen, onClose, orderData, isEditMode, setIsEditMode, onSave, onDelete, customers, vessels  }) => {
     const [activeOrder, setActiveOrder] = useState(orderData);
 
     useEffect(() => {
@@ -153,9 +155,17 @@ const SalesOrderModal = ({ isOpen, onClose, orderData, isEditMode, setIsEditMode
                         <div key={col.accessor} className={col.type === 'textarea' ? 'col-span-2' : ''}>
                             <label className="block text-sm font-medium text-gray-700">{col.header}</label>
                             {isEditMode ? (
-                                col.type === 'textarea' ? (
-                                    <textarea name={col.accessor} value={activeOrder[col.accessor] || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows="3" />
-                                ) : (
+                                col.accessor === 'customerId' ? (
+                                        <select name="customerId" value={activeOrder.customerId || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                            <option value="">고객 선택</option>
+                                            {customers.map(c => <option key={c.customerId} value={c.customerId}>{c.customerNm} ({c.customerId})</option>)}
+                                        </select>
+                                    ) : col.accessor === 'vesselId' ? (
+                                        <select name="vesselId" value={activeOrder.vesselId || ''} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                            <option value="">선박 선택</option>
+                                            {vessels.map(v => <option key={v.vesselId} value={v.vesselId}>{v.vesselNm} ({v.vesselId})</option>)}
+                                        </select>
+                                    ) : (
                                     <input
                                         type={col.type || "text"}
                                         name={col.accessor}
@@ -196,6 +206,8 @@ const SalesOrderModal = ({ isOpen, onClose, orderData, isEditMode, setIsEditMode
 export default function SalesOrder() {
     const [salesOrders, setSalesOrders] = useState([]);
     const [shipmentData, setShipmentData] = useState({});
+    const [customers, setCustomers] = useState([]);
+    const [vessels, setVessels] = useState([]); 
     const [searchParams, setSearchParams] = useState({ customerId: "", vesselId: "" });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeOrder, setActiveOrder] = useState(null);
@@ -204,22 +216,37 @@ export default function SalesOrder() {
 
     // MES 데이터는 처음에 한 번만 전체를 불러옵니다.
     useEffect(() => {
-        const fetchAllShipments = async () => {
+        const fetchAllData = async () => {
             try {
-                const response = await axios.get(MES_API_BASE);
-                const shipmentMap = response.data.reduce((acc, shipment) => {
-                    if (shipment && shipment.salesOrderId) {
-                        acc[shipment.salesOrderId] = shipment;
-                    }
+                const [ordersRes, shipmentsRes, customersRes, vesselsRes] = await Promise.all([
+                    axios.get(API_BASE, { params: {
+                        customerId: searchParams.customerId || undefined,
+                        vesselId: searchParams.vesselId || undefined,
+                    }}),
+                    axios.get(MES_API_BASE),
+                    axios.get(CUSTOMERS_API_URL),
+                    axios.get(VESSELS_API_URL)
+                ]);
+
+                // 출하 정보 맵 생성
+                const shipmentMap = shipmentsRes.data.reduce((acc, shipment) => {
+                    if (shipment && shipment.salesOrderId) acc[shipment.salesOrderId] = shipment;
                     return acc;
                 }, {});
+
+                setSalesOrders(ordersRes.data);
                 setShipmentData(shipmentMap);
+                setCustomers(customersRes.data || []);
+                setVessels(vesselsRes.data || []);
+                setSelectedOrderId(null);
+
             } catch (err) {
-                console.error("MES 출하 정보 전체 조회 실패:", err);
+                console.error("데이터 조회 실패:", err);
+                alert("데이터를 불러오는 데 실패했습니다.");
             }
         };
-        fetchAllShipments();
-    }, []); // 의존성 배열이 비어있으므로 최초 1회만 실행됩니다.
+        fetchAllData();
+    }, [searchParams]); // 의존성 배열이 비어있으므로 최초 1회만 실행됩니다.
 
     const loadSalesOrders = useCallback(async () => {
         try {
@@ -373,6 +400,8 @@ export default function SalesOrder() {
                 setIsEditMode={setIsEditMode}
                 onSave={handleSave}
                 onDelete={handleDelete}
+                customers={customers}
+                vessels={vessels}
             />
         </div>
     );
