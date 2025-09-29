@@ -37,7 +37,7 @@ export default function Sidebar() {
             {/* 기준 관리 */}
             <nav>
               <div className="flex items-center justify-between">
-                <span className="font-bold mb-3">기준관리</span>
+                <span className="font-bold mb-3">기준 정보 관리</span>
                 <button
                   onClick={() => setIsOpen(!isOpen)}
                   className="p-1 bg-transparent"
@@ -55,7 +55,7 @@ export default function Sidebar() {
                 }`}
               >
                 <NavLink to="/customerRegister" className={openToggleStyle}>
-                  고객 관리
+                  고객 등록
                 </NavLink>
                 <NavLink to="/suppliersRegister" className={openToggleStyle}>
                   공급업체 관리
@@ -63,11 +63,8 @@ export default function Sidebar() {
                 <NavLink to="/materials" className={openToggleStyle}>
                   자재 관리
                 </NavLink>
-                <NavLink to="/vessel" className={openToggleStyle}>
-                  선박 관리
-                </NavLink>
                 <NavLink to="/boms" className={openToggleStyle}>
-                  BOM 관리
+                  BOM 등록
                 </NavLink>
               </div>
             </nav>
@@ -75,7 +72,7 @@ export default function Sidebar() {
             {/* 수주 관리 */}
             <nav>
               <div className="flex items-center justify-between">
-                <span className="font-bold mb-3">수주 관리</span>
+                <span className="font-bold mb-3">프로젝트 관리</span>
                 <button
                   onClick={() => setIsOpenCustomer(!isOpenCustomer)}
                   className="p-1 bg-transparent"
@@ -92,11 +89,14 @@ export default function Sidebar() {
                   isOpenCustomer ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
+                <NavLink to="/vessel" className={openToggleStyle}>
+                  선박 등록
+                </NavLink>
                 <NavLink to="/projectRegister" className={openToggleStyle}>
-                  프로젝트 관리
+                  프로젝트 등록
                 </NavLink>
                 <NavLink to="/projectPlan" className={openToggleStyle}>
-                  생산계획 관리
+                  프로젝트 계획 등록
                 </NavLink>
               </div>
             </nav>
@@ -122,13 +122,13 @@ export default function Sidebar() {
                 }`}
               >
                 <NavLink to="/purchaseOrder" className={openToggleStyle}>
-                  구매주문관리
+                  구매주문 등록
                 </NavLink>
                 <NavLink to="/inventory" className={openToggleStyle}>
-                  재고관리
+                  재고 관리
                 </NavLink>
                 <NavLink to="/inventoryMovement" className={openToggleStyle}>
-                  재고원장관리
+                  재고원장 관리
                 </NavLink>
               </div>
             </nav>
@@ -180,11 +180,11 @@ export default function Sidebar() {
                   isOpen3 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                 }`}
               >
-                {/* ✅ [수정] 부서관리 메뉴 링크 경로 수정 */}
+                {/* 부서관리 메뉴 링크 경로 수정 */}
                 <NavLink to="/department" className={openToggleStyle}>
                   부서 관리
                 </NavLink>
-                {/* ✅ [수정] 사원관리 메뉴 링크 경로 수정 */}
+                {/* 사원관리 메뉴 링크 경로 수정 */}
                 <NavLink to="/employee" className={openToggleStyle}>
                   사원 관리
                 </NavLink>
@@ -194,7 +194,7 @@ export default function Sidebar() {
             {/* 전표관리 */}
             <nav>
               <div className="flex items-center justify-between">
-                <span className="font-bold mb-3">판매관리</span>
+                <span className="font-bold mb-3">판매 관리</span>
                 <button
                   onClick={() => setIsOpen4(!isOpen4)}
                   className="p-1 bg-transparent"
