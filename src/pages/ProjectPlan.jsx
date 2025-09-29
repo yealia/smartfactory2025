@@ -146,7 +146,7 @@ export default function ProjectPlan() {
         { header: "계획 범위", accessor: "planScope" },
         { header: "시작일", accessor: "startDate", type: "date" },
         { header: "종료일", accessor: "endDate", type: "date" },
-        { header: "진행률(%)", accessor: "progressRate", type: "number" },
+        { header: "진행률", accessor: "progressRate", type: "number" },
         { header: "상태", accessor: "status", type: "select", options: statusOptions },
         { header: "비고", accessor: "remark", fullWidth: true },
         { header: "생성일", accessor: "createdAt", readOnly: true },

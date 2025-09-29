@@ -203,7 +203,7 @@ export default function ProjectRegister() {
         }
         if (window.confirm(`정말로 프로젝트 '${activeProject.projectNm}'을(를) 삭제하시겠습니까?`)) {
             try {
-                await axios.delete(`${API_BASE}/${activeProject.projectId}`);
+                await axios.delete(`${PROJECTS_API_URL}/${activeProject.projectId}`);
                 alert("프로젝트가 삭제되었습니다.");
                 closeModalAndRefresh();
             } catch (err) {
