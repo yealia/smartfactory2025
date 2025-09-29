@@ -96,10 +96,12 @@ export default function CustomerRegister() {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 여부
     const [searchCustomerNm, setSearchCustomerNm] = useState(""); // 검색 조건: 고객명
     const [searchContractDate, setSearchContractDate] = useState(""); // 검색 조건: 계약일
+    const [employees, setEmployees] = useState([]); // 직원 목록을 저장
 
     // 컴포넌트가 처음 렌더링될 때 고객 목록을 불러옵니다.
     useEffect(() => {
-        loadCustomers();
+        loadCustomers();  // 고객 목록
+        loadEmployees();  // 직원 목록 
     }, []);
 
     // 고객 목록 조회 함수 (검색 조건 포함)
@@ -123,6 +125,18 @@ export default function CustomerRegister() {
         } catch (err) {
             console.error("고객 목록 조회 실패:", err);
             alert("고객 목록을 불러오는 중 오류가 발생했습니다.");
+        }
+    };
+
+    // 직원 목록을 불러오는 함수 추가
+    const loadEmployees = async () => {
+        try {
+            // 실제 직원 목록 API 주소로 변경해야 합니다.
+            const { data } = await axios.get("http://localhost:8081/api/employees"); 
+            setEmployees(data || []);
+        } catch (err) {
+            console.error("직원 목록 조회 실패:", err);
+            alert("담당자 목록을 불러오는 중 오류가 발생했습니다.");
         }
     };
 
@@ -328,6 +342,7 @@ export default function CustomerRegister() {
                                     onChange={(e) => updateCustomerField("customerId", e.target.value)}
                                     className={detailTextBox}
                                     disabled={!selectedCustomer.isNew} // 신규일 때만 활성화
+                                    placeholder="예) HD001"
                                 />
                             </div>
                             {/* 고객명 */}
@@ -372,11 +387,19 @@ export default function CustomerRegister() {
                             {/* 담당자명 */}
                             <div className="md:col-span-1">
                                 <label className={customerDetailLabel}>담당자명</label>
-                                <input type="text" value={selectedCustomer.contactPerson || ""}
-                                    onChange={(e) => updateCustomerField("contactPerson", e.target.value)}
-                                    className={detailTextBox}
-                                    disabled={!isFieldEditable()}
-                                />
+                                <select
+                                        value={selectedCustomer.contactPerson || ""}
+                                        onChange={(e) => updateCustomerField("contactPerson", e.target.value)}
+                                        className={detailTextBox}
+                                        disabled={!isFieldEditable()}
+                                    >
+                                        <option value="">담당자 선택</option>
+                                        {employees.map(emp => (
+                                            <option key={emp.employeeId} value={emp.employeeNm}>
+                                                {emp.employeeNm} ({emp.employeeId})
+                                            </option>
+                                        ))}
+                                    </select>
                             </div>
                             {/* 연락처 */}
                             <div className="md:col-span-1">
