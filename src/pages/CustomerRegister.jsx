@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback, memo } from "react";
+import React, { useEffect, useState, useCallback, memo, useRef } from "react";
 import axios from "axios";
 
 // This file requires a running backend server at http://localhost:8081 before execution.
 
 // =================================================================================
-// 1. Constants and Configuration
+// ✨ 1. Constants and Configuration
 // =================================================================================
 
 const API_BASE_URL = "http://localhost:8081/api/customers";
@@ -60,7 +60,7 @@ const customerService = {
 
 const useCustomerManagement = () => {
     const [customers, setCustomers] = useState([]);
-    const [employees, setEmployees] = useState([]); // 직원 목록 state
+    const [employees, setEmployees] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -94,11 +94,9 @@ const useCustomerManagement = () => {
         }
     }, [searchParams, showMessage]);
 
-    // 직원 목록을 불러오는 함수
     const loadEmployees = useCallback(async () => {
         try {
-            // 실제 직원 목록 API 주소로 변경해야 합니다.
-            const { data } = await axios.get("http://localhost:8081/api/employees"); 
+            const { data } = await axios.get("http://localhost:8081/api/employees");
             setEmployees(data || []);
         } catch (err) {
             console.error("직원 목록 조회 실패:", err);
@@ -107,8 +105,8 @@ const useCustomerManagement = () => {
     }, [showMessage]);
 
     useEffect(() => {
-        loadCustomers();  // 고객 조회
-        loadEmployees();  // 직원 목록
+        loadCustomers();
+        loadEmployees();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -122,6 +120,7 @@ const useCustomerManagement = () => {
         loadCustomers(INITIAL_SEARCH_PARAMS);
     }, [loadCustomers]);
 
+    // ✅ [수정] 새 항목을 배열의 마지막에 추가하도록 변경
     const handleInsert = useCallback(() => {
         if (isEditing && selectedCustomer && !selectedCustomer.isNew) {
             if (!window.confirm("수정 중인 내용이 있습니다. 저장하지 않고 신규 등록으로 이동하시겠습니까?")) {
@@ -132,7 +131,7 @@ const useCustomerManagement = () => {
             return showMessage("먼저 작성 중인 신규 고객을 저장해주세요.");
         }
         const newCustomer = createNewCustomer();
-        setCustomers(prev => [newCustomer, ...prev]);
+        setCustomers(prev => [...prev, newCustomer]); // 배열의 뒤에 추가
         setSelectedCustomer(newCustomer);
         setIsEditing(true);
     }, [customers, showMessage, isEditing, selectedCustomer]);
@@ -267,7 +266,6 @@ const MessageBox = memo(({ message }) => {
     );
 });
 const MainLayout = memo(({ children }) => <div className="flex flex-col lg:flex-row gap-6">{children}</div>);
-// ✅ [수정] 4:6 비율로 변경 (목록: w-2/5, 상세: w-3/5)
 const LeftPanel = memo(({ children }) => <div className="w-full lg:w-2/5 bg-white rounded-2xl shadow-lg border border-slate-200 flex flex-col">{children}</div>);
 const RightPanel = memo(({ children }) => <div className="w-full lg:w-3/5 bg-white rounded-2xl shadow-lg p-8 border border-slate-200 flex flex-col">{children}</div>);
 
@@ -336,54 +334,68 @@ const DetailStatus = memo(({ status }) => {
     );
 });
 
+// ✅ [수정] scrollToBottomTrigger prop 추가 및 자동 스크롤 로직 구현
+const CustomerGrid = memo(({ columns, data, onRowClick, selectedItem, isLoading, onSearch, onReset, onInsert, scrollToBottomTrigger }) => {
+    const gridBodyRef = useRef(null);
 
-const CustomerGrid = memo(({ columns, data, onRowClick, selectedItem, isLoading, onSearch, onReset }) => (
-    <>
-        <div className="flex justify-between items-center p-6 pb-4 border-b border-slate-200">
-            <h4 className="text-xl font-bold text-slate-800">고객 목록</h4>
-            <div className="flex gap-2">
-                <ActionButton intent="primary" onClick={onSearch}>조회</ActionButton>
-                <ActionButton intent="secondary" onClick={onReset}>리셋</ActionButton>
-            </div>
-        </div>
-        <div className="flex-1 overflow-y-auto relative">
-            {isLoading && (
-                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600"></div>
-                    <p className="ml-4 text-slate-600">데이터를 불러오는 중...</p>
+    useEffect(() => {
+        if (scrollToBottomTrigger && gridBodyRef.current) {
+            const { scrollHeight, clientHeight } = gridBodyRef.current;
+            // 스크롤이 필요할 때만 맨 아래로 이동
+            if (scrollHeight > clientHeight) {
+                gridBodyRef.current.scrollTop = scrollHeight;
+            }
+        }
+    }, [scrollToBottomTrigger]);
+
+    return (
+        <>
+            <div className="flex justify-between items-center p-6 pb-4 border-b border-slate-200">
+                <h4 className="text-xl font-bold text-slate-800">고객 목록</h4>
+                <div className="flex gap-2">
+                    <ActionButton intent="primary" onClick={onSearch}>조회</ActionButton>
+                    <ActionButton intent="secondary" onClick={onReset}>리셋</ActionButton>
+                    <ActionButton intent="success" onClick={onInsert}>추가</ActionButton>
                 </div>
-            )}
-            <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50 sticky top-0 z-10">
-                    <tr>{columns.map(col => <th key={col.accessor} className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wider">{col.header}</th>)}</tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                    {!isLoading && data.length === 0
-                        ? <tr><td colSpan={columns.length} className="text-center py-10 text-slate-500">데이터가 없습니다.</td></tr>
-                        : data.map((row, index) => {
-                            const isSelected = selectedItem && ((row.customerId && row.customerId === selectedItem.customerId) || (row._tempId && row._tempId === selectedItem._tempId));
-                            return (
-                                <tr key={row.customerId || row._tempId} onClick={() => onRowClick(row)} className={`cursor-pointer transition-colors duration-200 ${isSelected ? "bg-sky-100" : "hover:bg-slate-50"}`}>
-                                    {columns.map(col => (
-                                        <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
-                                            {/* ✅ [추가] 좁은 목록에서 긴 텍스트가 깨지지 않도록 처리 */}
-                                            <div className="truncate" title={row[col.accessor]}>
-                                                {col.accessor === 'no' ? index + 1 : col.accessor === 'status' ? <StatusBadge status={row[col.accessor]} /> : row[col.accessor]}
-                                            </div>
-                                        </td>
-                                    ))}
-                                </tr>
-                            );
-                        })
-                    }
-                </tbody>
-            </table>
-        </div>
-    </>
-));
+            </div>
+            {/* ✅ [수정] 스크롤 대상 div에 ref 연결 */}
+            <div ref={gridBodyRef} className="flex-1 overflow-y-auto relative">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600"></div>
+                        <p className="ml-4 text-slate-600">데이터를 불러오는 중...</p>
+                    </div>
+                )}
+                <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50 sticky top-0 z-10">
+                        <tr>{columns.map(col => <th key={col.accessor} className="px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wider">{col.header}</th>)}</tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                        {!isLoading && data.length === 0
+                            ? <tr><td colSpan={columns.length} className="text-center py-10 text-slate-500">데이터가 없습니다.</td></tr>
+                            : data.map((row, index) => {
+                                const isSelected = selectedItem && ((row.customerId && row.customerId === selectedItem.customerId) || (row._tempId && row._tempId === selectedItem._tempId));
+                                return (
+                                    <tr key={row.customerId || row._tempId} onClick={() => onRowClick(row)} className={`cursor-pointer transition-colors duration-200 ${isSelected ? "bg-sky-100" : "hover:bg-slate-50"}`}>
+                                        {columns.map(col => (
+                                            <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-slate-800">
+                                                <div className="truncate" title={row[col.accessor]}>
+                                                    {col.accessor === 'no' ? index + 1 : col.accessor === 'status' ? <StatusBadge status={row[col.accessor]} /> : row[col.accessor]}
+                                                </div>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </>
+    )
+});
 
 // --- Details Components ---
-// ✅ [수정] 상세 정보 레이아웃을 3열(md:grid-cols-3)로 변경
 const DetailFormLayout = memo(({ children }) => <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5">{children}</div>);
 const DetailField = memo(({ label, isRequired, children, icon }) => (
     <div>
@@ -399,15 +411,13 @@ const DetailDateInput = memo(({ name, value, onChange, readOnly, className = '' 
 const DetailSelect = memo(({ name, value, onChange, disabled, children, className = '' }) => <select name={name} value={value || ""} onChange={onChange} disabled={disabled} className={`w-full rounded-lg border shadow-sm px-3 py-2 focus:ring-2 focus:ring-sky-400 focus:border-sky-500 outline-none transition-all duration-200 ${disabled ? "bg-slate-100 cursor-not-allowed border-slate-200" : "bg-white border-gray-300"} ${className}`}>{children}</select>);
 const Placeholder = memo(({ text }) => <div className="flex-grow flex items-center justify-center"><p className="text-slate-500 text-center">{text}</p></div>);
 
-
 const DetailActions = memo(({ customer, isEditing, actions }) => {
     if (customer.isNew) {
         return (
             <>
-                <ActionButton intent="success" onClick={actions.handleSaveNew}>저장</ActionButton>
                 <ActionButton intent="secondary" onClick={actions.handleCancelInsert}>취소</ActionButton>
+                <ActionButton intent="success" onClick={actions.handleSaveNew}>저장</ActionButton>
             </>
-
         );
     }
     return (
@@ -449,11 +459,6 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
                 <h3 className="text-xl font-bold text-slate-800">
                     {customer?.isNew ? '신규 고객 등록' : '고객 상세정보'}
                 </h3>
-                {(!customer || !customer.isNew) && (
-                    <div className="flex gap-2">
-                        <ActionButton intent="success" onClick={actions.handleInsert}>추가</ActionButton>
-                    </div>
-                )}
             </div>
 
             {/* --- BODY & FOOTER --- */}
@@ -479,7 +484,6 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
                             </DetailField>
 
                             <DetailField label="담당자명" icon="user">
-                                {/* input을 select(콤보박스)로 변경 */}
                                 <DetailSelect
                                     name="contactPerson"
                                     value={customer.contactPerson}
@@ -497,7 +501,6 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
                             </DetailField>
                             <DetailField label="연락처" icon="phone"><DetailInput name="contactPhone" value={customer.contactPhone} onChange={updateField} readOnly={!isFieldEditable} placeholder="예) 010-1234-5678" className={inputPadding} /></DetailField>
                             <DetailField label="E-mail" icon="email"><DetailInput name="contactEmail" value={customer.contactEmail} onChange={updateField} readOnly={!isFieldEditable} placeholder="예) spyard@cp.com" className={inputPadding} /></DetailField>
-                            {/* ✅ [수정] 주소와 비고 필드의 col-span을 3으로 변경 */}
                             <div className="md:col-span-3"><DetailField label="주소"><DetailInput name="contactAddress" value={customer.contactAddress} onChange={updateField} readOnly={!isFieldEditable} placeholder="주소를 입력하세요" /></DetailField></div>
                             <div className="md:col-span-3"><DetailField label="비고"><DetailInput name="remark" value={customer.remark} onChange={updateField} readOnly={!isFieldEditable} placeholder="특이사항을 입력하세요" /></DetailField></div>
                         </DetailFormLayout>
@@ -506,14 +509,13 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
 
                     {/* --- FOOTER --- */}
                     {customer.isNew && (
-                        <div className="mt-auto pt-6 flex justify-end gap-2">
+                        <div className="mt-auto pt-6 flex justify-center gap-2">
                             <DetailActions customer={customer} isEditing={isEditing} actions={actions} />
-
                         </div>
                     )}
 
                     {!customer.isNew && (
-                        <div className="mt-auto pt-6 flex justify-center gap-2">
+                        <div className="mt-auto pt-6 flex justify-end gap-2">
                             <DetailActions customer={customer} isEditing={isEditing} actions={actions} />
                         </div>
                     )}
@@ -532,6 +534,15 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
 
 export default function CustomerRegister() {
     const { customers, selectedCustomer, isEditing, isLoading, message, searchParams, employees, actions } = useCustomerManagement();
+
+    // ✅ [추가] 자동 스크롤을 위한 상태
+    const [scrollToBottomTrigger, setScrollToBottomTrigger] = useState(null);
+
+    // ✅ [추가] '추가' 액션에 자동 스크롤 트리거를 결합한 새로운 핸들러
+    const handleInsertAndScroll = useCallback(() => {
+        actions.handleInsert();
+        setScrollToBottomTrigger(Date.now()); // 현재 시간을 트리거로 설정하여 변경 감지
+    }, [actions]);
 
     const gridColumns = [
         { header: "No", accessor: "no" },
@@ -562,6 +573,8 @@ export default function CustomerRegister() {
                         isLoading={isLoading}
                         onSearch={() => actions.loadCustomers(searchParams)}
                         onReset={actions.handleResetSearch}
+                        onInsert={handleInsertAndScroll} // ✅ [수정] 스크롤 기능이 포함된 핸들러로 교체
+                        scrollToBottomTrigger={scrollToBottomTrigger} // ✅ [수정] 트리거 prop 전달
                     />
                 </LeftPanel>
                 <RightPanel>
