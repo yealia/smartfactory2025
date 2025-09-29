@@ -81,9 +81,13 @@ const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick }) => (
 // II. 메인 컴포넌트
 // ===================================================================
 const API_BASE = "http://localhost:8081/api/project_plans";
+const PROJECTS_API_URL = "http://localhost:8081/api/projects";
+const VESSELS_API_URL = "http://localhost:8081/api/vessels";
 
 export default function ProjectPlan() {
     const [plans, setPlans] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [vessels, setVessels] = useState([]);
     const [searchParams, setSearchParams] = useState({
         projectId: "", vesselId: "", startDate: "", endDate: "", status: "",
     });
@@ -137,8 +141,8 @@ export default function ProjectPlan() {
 
     const allColumns = [
         { header: "계획 ID", accessor: "planId", readOnly: true },
-        { header: "프로젝트 ID", accessor: "projectId" },
-        { header: "선박 ID", accessor: "vesselId" },
+        { header: "프로젝트 ID", accessor: "projectId", type:"select" },
+        { header: "선박 ID", accessor: "vesselId", type: "select" },
         { header: "계획 범위", accessor: "planScope" },
         { header: "시작일", accessor: "startDate", type: "date" },
         { header: "종료일", accessor: "endDate", type: "date" },
@@ -150,25 +154,36 @@ export default function ProjectPlan() {
     ];
     
     const loadPlans = useCallback(async () => {
-        try {
-            const params = {
-                projectId: searchParams.projectId || undefined,
-                vesselId: searchParams.vesselId || undefined,
-                startDate: searchParams.startDate || undefined,
-                endDate: searchParams.endDate || undefined,
-                status: searchParams.status || undefined,
-                // 참고: 정렬 기능은 백엔드 API에 sortBy, sortDir 파라미터가 구현되어 있어야 동작합니다.
-                sortBy: sortConfig.key,
-                sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
-            };
-            const response = await axios.get(API_BASE, { params });
-            setPlans(response.data);
-            setSelectedGridPlan(null);
-        } catch (err) {
-            console.error("생산계획 목록 조회 실패:", err);
-            alert(`데이터 조회 중 오류 발생: ${err.message}`);
-        }
-    }, [searchParams, sortConfig]);
+    try {
+      // 1. ★ 생산 계획을 검색/정렬하기 위한 파라미터 객체를 먼저 정의합니다. (이 부분이 누락되었습니다)
+      const planParams = {
+        projectId: searchParams.projectId || undefined,
+        vesselId: searchParams.vesselId || undefined,
+        startDate: searchParams.startDate || undefined,
+        endDate: searchParams.endDate || undefined,
+        status: searchParams.status || undefined,
+        sortBy: sortConfig.key,
+        sortDir: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
+      };
+
+      // 2. Promise.all을 사용해 3개의 API를 동시에 호출합니다.
+      const [plansRes, projectsRes, vesselsRes] = await Promise.all([
+        axios.get(API_BASE, { params: planParams }), // 정의된 planParams 사용
+        axios.get(PROJECTS_API_URL),
+        axios.get(VESSELS_API_URL),
+      ]);
+      
+      // 3. 각 API 호출 결과를 state에 저장합니다.
+      setPlans(plansRes.data || []);
+      setProjects(projectsRes.data || []);
+      setVessels(vesselsRes.data || []);
+      setSelectedGridPlan(null);
+
+    } catch (err) {
+      console.error("데이터 조회 실패:", err);
+      alert(`데이터 조회 중 오류가 발생했습니다: ${err.message}`);
+    }
+  }, [searchParams, sortConfig]);
 
     useEffect(() => {
         loadPlans();
@@ -288,8 +303,24 @@ export default function ProjectPlan() {
                                     <div key={col.accessor} className={col.fullWidth ? 'col-span-2' : ''}>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">{col.header}</label>
                                         {col.type === 'select' ? (
-                                            <select name={col.accessor} value={editingPlan[col.accessor] || ''} onChange={handleModalInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500" disabled={col.readOnly}>
-                                                {col.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                            <select 
+                                                name={col.accessor} 
+                                                value={editingPlan[col.accessor] || ''} 
+                                                onChange={handleModalInputChange}
+                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500"
+                                            >
+                                                {col.accessor === 'projectId' && (
+                                                    <>
+                                                        <option value="">프로젝트 선택</option>
+                                                        {projects.map(p => <option key={p.projectId} value={p.projectId}>{p.projectNm} ({p.projectId})</option>)}
+                                                    </>
+                                                )}
+                                                {col.accessor === 'vesselId' && (
+                                                    <>
+                                                        <option value="">선박 선택</option>
+                                                        {vessels.map(v => <option key={v.vesselId} value={v.vesselId}>{v.vesselNm} ({v.vesselId})</option>)}
+                                                    </>
+                                                )}
                                             </select>
                                         ) : (
                                             <input
