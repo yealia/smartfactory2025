@@ -269,6 +269,7 @@ export default function PurchaseOrders() {
     return (
     <>
         <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">발주 등록</h2>
             {/* 검색 필터 */}
             <div className="bg-white rounded-xl shadow p-4 flex flex-wrap gap-4 items-end">
                 <input 

@@ -304,7 +304,9 @@ export default function Department() {
                             </div>
                             <div>
                                 <label className={detailLabel}>관리자 ID</label>
-                                <input type="number" value={selectedDepartment.managerId || ""}
+                               <input 
+                                    type="text" 
+                                    value={selectedDepartment.managerId || ""}
                                     onChange={e => updateDepartmentField("managerId", e.target.value)}
                                     className={`${detailTextBox} ${!isFieldEditable ? "bg-gray-100" : "bg-white"}`}
                                     readOnly={!isFieldEditable}

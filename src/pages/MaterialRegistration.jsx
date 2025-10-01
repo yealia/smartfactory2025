@@ -165,7 +165,7 @@ export default function MaterialRegister() {
             maxStockQuantity: 0,
             currentStock: 0,
             leadTime: 0,
-            supplierId: "", // 초기값 null 대신 ""
+            supplierName: "", // 초기값 null 대신 ""
             lastPurchaseDate: null,
             status: 0,
             warehouse: "",
@@ -376,10 +376,14 @@ export default function MaterialRegister() {
                                         className={detailTextBox} disabled={!isFieldEditable()} />
                                 </div>
                                 <div>
-                                    <label className={materialDetailLabel}>공급업체 ID</label>
-                                    <input type="number" value={selectedMaterial.supplierId || ""}
-                                        onChange={(e) => updateMaterialField("supplierId", e.target.value ? Number(e.target.value) : null)}
-                                        className={detailTextBox} disabled={!isFieldEditable()} />
+                                    <label className={materialDetailLabel}>공급업체명</label>
+                                    <input
+                                        type="text"
+                                        value={selectedMaterial.supplierName || ""}
+                                        onChange={(e) => updateMaterialField("supplierName", e.target.value)}
+                                        className={detailTextBox}
+                                        disabled={!isFieldEditable()}
+                                    />
                                 </div>
                                 <div className="md:col-span-3">
                                     <label className={materialDetailLabel}>규격</label>

@@ -58,10 +58,10 @@ export default function Sidebar() {
                   고객 등록
                 </NavLink>
                 <NavLink to="/suppliersRegister" className={openToggleStyle}>
-                  공급업체 관리
+                  공급 업체 등록
                 </NavLink>
                 <NavLink to="/materials" className={openToggleStyle}>
-                  자재 관리
+                  자재 등록
                 </NavLink>
                 <NavLink to="/boms" className={openToggleStyle}>
                   BOM 등록
@@ -96,7 +96,7 @@ export default function Sidebar() {
                   프로젝트 등록
                 </NavLink>
                 <NavLink to="/projectPlan" className={openToggleStyle}>
-                  프로젝트 계획 등록
+                  프로젝트 생산 계획
                 </NavLink>
               </div>
             </nav>
@@ -122,13 +122,13 @@ export default function Sidebar() {
                 }`}
               >
                 <NavLink to="/purchaseOrder" className={openToggleStyle}>
-                  구매주문 등록
+                  발주 등록
                 </NavLink>
                 <NavLink to="/inventory" className={openToggleStyle}>
-                  재고 관리
+                  재고 등록
                 </NavLink>
                 <NavLink to="/inventoryMovement" className={openToggleStyle}>
-                  재고원장 관리
+                  재고 원장 
                 </NavLink>
               </div>
             </nav>
@@ -163,7 +163,7 @@ export default function Sidebar() {
             {/* 인사관리 */}
             <nav>
               <div className="flex items-center justify-between">
-                <span className="font-bold mb-3">인사관리</span>
+                <span className="font-bold mb-3">인사 관리</span>
                 <button
                   onClick={() => setIsOpen3(!isOpen3)}
                   className="p-1 bg-transparent"

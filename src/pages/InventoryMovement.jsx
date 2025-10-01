@@ -354,7 +354,7 @@ export default function InventoryMovement() {
     // =================================================================================
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
-            <h2 className="font-bold text-2xl mb-4 text-gray-800">재고 원장 관리</h2>
+            <h2 className="font-bold text-2xl mb-4 text-gray-800">재고 원장</h2>
 
             <SearchLayout>
                 <SearchTextBox label="이력 ID" name="movementId" type="number" value={searchParams.movementId} onChange={handleSearchChange} />
@@ -365,7 +365,6 @@ export default function InventoryMovement() {
                     <div className="flex space-x-2">
                         <button onClick={handleSearch} className="flex-1 bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 transition shadow">조회</button>
                         <button onClick={handleSearchReset} className="flex-1 bg-gray-500 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-600 transition shadow">초기화</button>
-                        <button onClick={openCreateModal} className="flex-1 bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600 transition shadow">신규 등록</button>
                         <SyncButton onClick={handleSyncFromMes} />
                     </div>
                 </div>

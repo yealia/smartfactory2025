@@ -252,7 +252,7 @@ export default function ProjectPlan() {
 
     return (
         <div className="p-4 bg-gray-50 min-h-screen">
-            <h2 className="font-bold text-2xl mb-6 text-gray-800">생산 계획 관리</h2>
+            <h2 className="font-bold text-2xl mb-6 text-gray-800">프로젝트 생산 계획</h2>
             <SearchLayout>
                 <SearchTextBox label="프로젝트 ID" value={searchParams.projectId} onChange={(e) => setSearchParams({...searchParams, projectId: e.target.value})} />
                 <SearchTextBox label="선박 ID" value={searchParams.vesselId} onChange={(e) => setSearchParams({...searchParams, vesselId: e.target.value})} />

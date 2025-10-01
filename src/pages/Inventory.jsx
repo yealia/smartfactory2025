@@ -110,7 +110,7 @@ export default function InventoryPage() {
         { header: "창고", accessor: "warehouse" },
         { header: "위치", accessor: "location" },
         { header: "현재고", accessor: "onHand" },
-        { header: "현재고(자재쪽)", accessor: "materialCurrentStock" }, {/*  자재쪽 현재고 임의로 불러옴 */}
+        // { header: "현재고(자재쪽)", accessor: "materialCurrentStock" }, {/*  자재쪽 현재고 임의로 불러옴 */}
     ];
 
 
@@ -254,7 +254,7 @@ export default function InventoryPage() {
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
-            <h2 className="font-bold text-2xl mb-6 text-gray-800">재고 관리</h2>
+            <h2 className="font-bold text-2xl mb-6 text-gray-800">재고 등록</h2>
             
             <SearchLayout>
                 <SearchTextBox
@@ -325,13 +325,13 @@ export default function InventoryPage() {
                                     <input type="number" value={selectedInventory.onHand || 0} onChange={(e) => updateSelectedField("onHand", Number(e.target.value))} className={detailInputStyle} disabled={!isFieldEditable()} />
                                 </div>
                 {/* ==============  자재쪽 현재고 임의로 불러옴 */}
-                                <div>
+                                {/* <div>
                                     <label className={detailLabelStyle}>현재고(자재 관리..)</label>
                                     <input type="number"
                                            value={selectedInventory.materialCurrentStock ?? 0}
                                            readOnly
                                            className={`${detailInputStyle} bg-gray-100`} />
-                                </div>
+                                </div> */}
                                 <div>
                                     <label className={detailLabelStyle}>예약수량</label>
                                     <input type="number" value={selectedInventory.reservedQty || 0} onChange={(e) => updateSelectedField("reservedQty", Number(e.target.value))} className={detailInputStyle} disabled={!isFieldEditable()} />

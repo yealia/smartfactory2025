@@ -25,7 +25,7 @@ const ERROR_MESSAGES = {
 const createNewSupplier = () => ({
     isNew: true,
     _tempId: `new_${Date.now()}`,
-    supplierId: null,
+    supplierId: null, // ✅ 자동 채번이므로 null로 초기화
     supplierName: "",
     contractDate: new Date().toISOString().slice(0, 10),
     contactName: "",
@@ -106,13 +106,12 @@ const useSupplierManagement = () => {
         loadSuppliers(INITIAL_SEARCH_PARAMS);
     }, [loadSuppliers]);
 
-    // ✅ [수정] 새 항목을 배열의 마지막에 추가하도록 변경
     const handleInsert = useCallback(() => {
         if (suppliers.some(s => s.isNew)) {
             return showMessage("먼저 작성 중인 신규 공급업체를 저장해주세요.");
         }
         const newSupplier = createNewSupplier();
-        setSuppliers(prev => [...prev, newSupplier]); // 배열의 뒤에 추가
+        setSuppliers(prev => [...prev, newSupplier]);
         setSelectedSupplier(newSupplier);
         setIsEditing(true);
     }, [suppliers, showMessage]);
@@ -355,10 +354,8 @@ const SupplierDetails = memo(({ supplier, isEditing, actions }) => {
                 <>
                     <div className="flex-grow overflow-y-auto px-2 pb-4">
                         <DetailFormLayout>
-                            <DetailField label="공급업체 ID">
-                                <DetailInput name="supplierId" value={supplier.supplierId || ""} readOnly={true} placeholder="자동 생성"/>
-                            </DetailField>
-                             <DetailField label="공급업체명" isRequired>
+                            {/* ✅ [수정] 공급업체 ID 필드 전체 삭제 */}
+                            <DetailField label="공급업체명" isRequired>
                                 <DetailInput name="supplierName" value={supplier.supplierName} onChange={updateField} readOnly={!isFieldEditable} placeholder="공급업체명을 입력하세요" />
                             </DetailField>
                             <DetailField label="담당자명" icon="user">
@@ -425,6 +422,7 @@ const SupplierSearch = memo(({ params, onChange, onSearch }) => (
 export default function SupplierRegister() {
     const { suppliers, selectedSupplier, isEditing, isLoading, message, searchParams, actions } = useSupplierManagement();
 
+    // ✅ [수정] 그리드에서 supplierId 컬럼 제거
     const gridColumns = [
         { header: "No", accessor: "no" },
         { header: "공급업체명", accessor: "supplierName" },

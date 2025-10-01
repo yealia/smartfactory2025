@@ -271,7 +271,7 @@ export default function Vessels() {
 
     return (
         <div className="p-4 bg-gray-50 min-h-screen">
-            <h2 className="font-bold text-2xl mb-6 text-gray-800">선박 관리</h2>
+            <h2 className="font-bold text-2xl mb-6 text-gray-800">선박 등록</h2>
             {message && <div className="mb-4 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm text-center">{message}</div>}
             
             <SearchLayout>
