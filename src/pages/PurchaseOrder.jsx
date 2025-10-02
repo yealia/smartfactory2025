@@ -93,7 +93,14 @@ export default function PurchaseOrders() {
     };
 
     const handleAddNew = () => {
-        setEditingOrder(initialOrderState);
+        const newOrderTemplate = {
+            ...initialOrderState,
+            purchaseOrder: {
+                ...initialOrderState.purchaseOrder,
+                isNew: true // ★ 신규 항목임을 명시하는 플래그
+            }
+        };
+        setEditingOrder(newOrderTemplate);
         setIsModalOpen(true);
     };
 
@@ -392,9 +399,18 @@ export default function PurchaseOrders() {
                 <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-6 space-y-4 overflow-y-auto max-h-[95vh]">
                     <h2 className="text-xl font-bold">발주 {editingOrder.purchaseOrder.purchaseOrderId ? '수정' : '등록'}</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border p-4 rounded-md">
-                        <input placeholder="발주 번호" value={editingOrder.purchaseOrder.purchaseOrderId || ''} disabled={!!editingOrder.purchaseOrder.purchaseOrderId}
-                            onChange={e => !editingOrder.purchaseOrder.purchaseOrderId && setEditingOrder(prev => ({...prev, purchaseOrder: {...prev.purchaseOrder, purchaseOrderId: e.target.value}}))} 
-                            className="border px-3 py-2 rounded-md disabled:bg-gray-100" />
+                        <input 
+                            placeholder="발주 번호" 
+                            value={editingOrder.purchaseOrder.purchaseOrderId || ''} 
+                            // ★ disabled 로직 수정: 신규 등록일 때(!isNew)는 항상 입력 가능하도록 변경
+                            disabled={!editingOrder.purchaseOrder.isNew && !!editingOrder.purchaseOrder.purchaseOrderId}
+                            onChange={e => {
+                                // ★ 신규 등록이 아닐 때는 ID 변경 불가
+                                if (!editingOrder.purchaseOrder.isNew) return;
+                                setEditingOrder(prev => ({...prev, purchaseOrder: {...prev.purchaseOrder, purchaseOrderId: e.target.value}}));
+                            }} 
+                            className="border px-3 py-2 rounded-md disabled:bg-gray-100" 
+                        />
                         <input type="date" value={editingOrder.purchaseOrder.orderDate} 
                             onChange={e => setEditingOrder(prev => ({...prev, purchaseOrder: {...prev.purchaseOrder, orderDate: e.target.value}}))} 
                             className="border px-3 py-2 rounded-md" />
