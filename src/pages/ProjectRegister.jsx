@@ -313,7 +313,7 @@ export default function ProjectRegister() {
 
             <BodyGrid
                 columns={gridColumns}
-                data={projects}
+                data={projects} // .map()을 제거하고 원본 데이터를 전달합니다.
                 onRowClick={handleRowClick}
                 selectedId={selectedGridProject?.projectId}
                 sortConfig={sortConfig}
@@ -354,7 +354,7 @@ export default function ProjectRegister() {
                                                                 {employees.map(e => <option key={e.employeeId} value={e.employeeId}>{e.employeeNm} ({e.employeeId})</option>)}
                                                             </select>
                                                         ) : (
-                                                            // ★★★ 바로 여기에 status 콤보박스 로직이 들어갑니다! ★★★
+                                                            // status 콤보박스 로직
                                                             <select name="status" value={activeProject.status ?? 0} onChange={handleModalInputChange} disabled={!editable} className={inputClass}>
                                                                 {Object.entries(STATUS_MAP).map(([key, value]) => (
                                                                     <option key={key} value={key}>{value}</option>

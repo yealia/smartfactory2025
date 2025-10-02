@@ -14,7 +14,9 @@ const gridColumns = [
     { header: "고객ID", accessor: "customerId" },
     { header: "선박ID", accessor: "vesselId" },
     { header: "총금액", accessor: "totalAmount" },
-    { header: "상태", accessor: "status" },
+    { header: "출하 상태(MES)", accessor: "mesStatus" },
+    { header: "수주 상태", accessor: "status" },
+    
 ];
 
 /** 모달 내부에 표시될 모든 컬럼 정보 (상세 정보) */
@@ -96,25 +98,33 @@ const BodyGrid = ({ columns, data, onRowClick, selectedId, onStatusClick, shipme
                         >
                             {columns.map((col) => (
                                 <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                    {col.accessor === 'status' ? (
-                                        <div>
-                                            <span
-                                                className="font-semibold text-blue-600 cursor-pointer hover:underline"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    // 이제 onStatusClick을 정상적으로 찾을 수 있습니다.
-                                                    onStatusClick(row);
-                                                }}
-                                            >
-                                                {getStatusText(row.status)}
-                                            </span>
-                                            <p className={`text-xs mt-1 ${shipment ? 'text-gray-500' : 'text-gray-400'}`}>
-                                                MES: {shipment ? getMesStatusText(shipment.status) : '정보 없음'}
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        row[col.accessor]
-                                    )}
+                                    {(() => {
+                                        // 1. '수주 상태' 컬럼일 경우
+                                        if (col.accessor === 'status') {
+                                            return (
+                                                <span
+                                                    className="font-semibold text-blue-600 cursor-pointer hover:underline"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onStatusClick(row);
+                                                    }}
+                                                >
+                                                    {getStatusText(row.status)}
+                                                </span>
+                                            );
+                                        }
+                                        // 2. '출하 상태' 컬럼일 경우
+                                        if (col.accessor === 'mesStatus') {
+                                            return (
+                                                <span className={`${shipment ? 'text-gray-600' : 'text-gray-400'}`}>
+                                                    {shipment ? getMesStatusText(shipment.status) : '정보 없음'}
+                                                </span>
+                                            );
+        
+                                        }
+                                        // 3. 나머지 일반 컬럼일 경우
+                                        return row[col.accessor];
+                                    })()}
                                 </td>
                             ))}
                         </tr>
