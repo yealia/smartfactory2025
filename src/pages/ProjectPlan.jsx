@@ -32,7 +32,7 @@ const StyledButton = ({ onClick, disabled, children, colorClass }) => (
 );
 
 // ✅ [수정] BodyGrid가 컬럼 정의에 render 함수를 지원하도록 수정
-const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick }) => (
+const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick, onRowDoubleClick }) => (
     <div className="h-[calc(100vh-280px)] overflow-auto border rounded-lg shadow-md bg-white">
         <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100 sticky top-0">
@@ -60,7 +60,9 @@ const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick }) => (
                         // ✅ [수정] 행 전체 클릭(onRowClick) 기능 제거
                         <tr
                             key={row.planId}
-                            className={`${selectedId && row.planId === selectedId ? 'bg-sky-100' : 'hover:bg-gray-50'}`}
+                            // ✨ onDoubleClick 핸들러를 추가합니다.
+                            onDoubleClick={() => onRowDoubleClick(row)} 
+                            className={`cursor-pointer ${selectedId && row.planId === selectedId ? 'bg-sky-100' : 'hover:bg-gray-50'}`}
                         >
                             {columns.map((col) => (
                                 <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
@@ -106,16 +108,21 @@ export default function ProjectPlan() {
     };
     
     // ✅ [수정] handleRowClick 함수를 '수정' 버튼의 onClick 핸들러로 사용
-    const handleEditClick = (plan) => {
-        setSelectedGridPlan(plan);
-        const formattedPlan = { 
-            ...plan,
-            startDate: plan.startDate ? plan.startDate.split("T")[0] : "",
-            endDate: plan.endDate ? plan.endDate.split("T")[0] : "",
-        };
-        setEditingPlan({ ...formattedPlan, isNew: false });
-        setIsModalOpen(true);
+    const handleEditClick = (gridRow) => {
+    // plans 배열에서 원본 데이터를 찾습니다.
+    const originalPlan = plans.find(p => p.planId === gridRow.planId);
+    if (!originalPlan) return;
+
+    setSelectedGridPlan(originalPlan);
+    const formattedPlan = { 
+        ...originalPlan, // 가공되지 않은 원본 데이터를 사용
+        startDate: originalPlan.startDate ? originalPlan.startDate.split("T")[0] : "",
+        endDate: originalPlan.endDate ? originalPlan.endDate.split("T")[0] : "",
     };
+    // isNew 플래그만 추가하여 editingPlan state 설정
+    setEditingPlan({ ...formattedPlan, isNew: false });
+    setIsModalOpen(true);
+};
 
     const gridColumns = [
         { header: "계획 ID", accessor: "planId" },
@@ -124,20 +131,34 @@ export default function ProjectPlan() {
         { header: "시작일", accessor: "startDate" },
         { header: "종료일", accessor: "endDate" },
         { header: "상태", accessor: "status" },
-        // ✅ [추가] 수정 버튼을 포함할 '작업' 컬럼 추가
-        {
-            header: "작업",
-            accessor: "actions",
-            render: (row) => (
-                <button
-                    onClick={() => handleEditClick(row)}
-                    className="px-3 py-1 bg-sky-500 text-white text-xs font-semibold rounded-md shadow-sm hover:bg-sky-600"
+           
+    { 
+        header: "최종확정여부", 
+        accessor: "isFinal",
+        render: (row) => {
+            // '미완' 버튼 클릭 시, 가공되지 않은 원본 plan 데이터를 넘겨주기 위해
+            // plans 배열에서 현재 row와 일치하는 원본 데이터를 찾습니다.
+            const originalPlan = plans.find(p => p.planId === row.planId);
+
+            return originalPlan?.isFinal ? (
+                <span className="font-semibold text-green-600">확정</span>
+            ) : (
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation(); // 행 더블클릭 방지
+                        handleFinalizePlan(originalPlan);
+                    }}
+                    className="text-gray-500 hover:text-blue-600 hover:font-semibold"
                 >
-                    수정
+                    미완
                 </button>
-            )
+            );
         }
-    ];
+    },
+];
+        
+        
+
 
     const allColumns = [
         { header: "계획 ID", accessor: "planId", readOnly: true },
@@ -146,7 +167,6 @@ export default function ProjectPlan() {
         { header: "계획 범위", accessor: "planScope" },
         { header: "시작일", accessor: "startDate", type: "date" },
         { header: "종료일", accessor: "endDate", type: "date" },
-        { header: "진행률", accessor: "progressRate", type: "number" },
         { header: "상태", accessor: "status", type: "select", options: statusOptions },
         { header: "비고", accessor: "remark", fullWidth: true },
         { header: "생성일", accessor: "createdAt", readOnly: true },
@@ -189,24 +209,35 @@ export default function ProjectPlan() {
         loadPlans();
     }, [loadPlans]);
     
-    const handleSave = async () => {
-        if (!editingPlan) return;
-        try {
-            if (editingPlan.isNew) {
-                // 'isNew'와 같은 임시 속성은 서버로 보내지 않음
-                const { isNew, ...createData } = editingPlan;
-                await axios.post(API_BASE, createData);
-                alert("새로운 계획이 등록되었습니다.");
-            } else {
-                await axios.put(`${API_BASE}/${editingPlan.planId}`, editingPlan);
-                alert("계획이 수정되었습니다.");
-            }
-            closeModalAndRefresh();
-        } catch (err) {
-            console.error("저장 실패:", err);
-            alert(`저장 중 오류 발생: ${err.message}`);
-        }
+   const handleSave = async () => {
+    if (!editingPlan) return;
+
+    // --- 🔽 수정/추가될 코드 시작 🔽 ---
+    const saveData = {
+        ...editingPlan,
+        // status와 progressRate를 숫자로 변환하여 전송
+        status: parseInt(editingPlan.status, 10),
+        progressRate: parseFloat(editingPlan.progressRate) || 0,
     };
+    // --- 🔼 수정/추가될 코드 끝 🔼 ---
+
+    try {
+        if (saveData.isNew) {
+            const { isNew, ...createData } = saveData;
+            await axios.post(API_BASE, createData);
+            alert("새로운 계획이 등록되었습니다.");
+        } else {
+            await axios.put(`${API_BASE}/${saveData.planId}`, saveData); // 수정된 saveData를 전송
+            alert("계획이 수정되었습니다.");
+        }
+        closeModalAndRefresh();
+    } catch (err) {
+        console.error("저장 실패:", err);
+        // 서버 에러 메시지가 있다면 함께 표시
+        const message = err.response?.data?.message || err.message;
+        alert(`저장 중 오류 발생: ${message}`);
+    }
+};
 
     const handleDelete = async () => {
         if (!editingPlan || editingPlan.isNew) return;
@@ -221,7 +252,33 @@ export default function ProjectPlan() {
             }
         }
     };
-    
+
+    const handleFinalizePlan = async (planToFinalize) => {
+    // 혹시 모를 오류를 방지하기 위해 planToFinalize 객체가 있는지 확인합니다.
+    if (!planToFinalize) return;
+
+    if (!window.confirm(`[${planToFinalize.planId}] 계획을 최종 확정하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+        return;
+    }
+
+    try {
+        // isFinal 값만 true로 변경한 새로운 객체를 생성합니다.
+        const updatedPlan = { ...planToFinalize, isFinal: true };
+
+        // 서버에 PUT 요청을 보내 데이터를 업데이트합니다.
+        await axios.put(`${API_BASE}/${planToFinalize.planId}`, updatedPlan);
+
+        alert("생산 계획이 최종 확정되었습니다.");
+        
+        // 목록을 새로고침하여 화면에 변경사항을 반영합니다.
+        await loadPlans();
+
+    } catch (err) {
+        console.error("최종 확정 처리 실패:", err);
+        alert("확정 처리 중 오류가 발생했습니다.");
+    }
+};
+
     const openCreateModal = () => {
         const today = new Date().toISOString().split("T")[0];
         setEditingPlan({ isNew: true, planId: "", projectId: "", vesselId: "", planScope: "", startDate: today, endDate: today, progressRate: 0, status: 0, remark: "" });
@@ -289,6 +346,7 @@ export default function ProjectPlan() {
                 selectedId={selectedGridPlan?.planId}
                 sortConfig={sortConfig}
                 onHeaderClick={handleSort}
+                onRowDoubleClick={handleEditClick}
             />
 
             {isModalOpen && editingPlan && (
