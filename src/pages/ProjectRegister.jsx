@@ -131,15 +131,15 @@ export default function ProjectRegister() {
     ];
 
     const allColumns = [
-        { header: "프로젝트 ID", accessor: "projectId", readOnlyOnEdit: true, placeholder: "예) 20250927-001" },
-        { header: "프로젝트명", accessor: "projectNm", placeholder: "예) 2025년 9월 27일 첫번째 프로젝트" },
+        { header: "프로젝트 ID", accessor: "projectId", readOnlyOnEdit: true, placeholder: "PJ250711US01" },
+        { header: "프로젝트명", accessor: "projectNm", placeholder: "180K 벌크선 (American Pacific)" },
         { header: "고객 ID", accessor: "customerId", type: "select" },
         { header: "담당자 ID", accessor: "employeeId", type: "select" },
         { header: "시작일", accessor: "startDate", type: "date" },
         { header: "납기일", accessor: "deliveryDate", type: "date" },
         { header: "우선순위", accessor: "priority", type: "number" },
         { header: "상태", accessor: "status", type: "select" },
-        { header: "총 예산", accessor: "totalBudget", type: "number" },
+        { header: "총 예산", accessor: "totalBudget", type: "number", placeholder:"95000000.00" },
         { header: "통화", accessor: "currencyCode" },
         { header: "실제납기일", accessor: "actualDeliveryDate", type: "date" },
         { header: "비고", accessor: "remark", fullWidth: true },
@@ -247,7 +247,7 @@ export default function ProjectRegister() {
         setActiveProject({
             isNew: true, projectId: "", projectNm: "", customerId: "", employeeId: "",
             startDate: today, deliveryDate: today, priority: 0, status: 0,
-            totalBudget: 0, currencyCode: "KRW", actualDeliveryDate: "", remark: ""
+            totalBudget: 0, currencyCode: "US", actualDeliveryDate: "", remark: ""
         });
         setIsEditMode(true);
         setIsModalOpen(true);

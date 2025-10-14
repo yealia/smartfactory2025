@@ -317,8 +317,8 @@ export default function Vessels() {
 
                     {selectedVessel ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div><label className={detailLabel}>선박 ID <span className="text-red-500">*</span></label><input type="text" value={selectedVessel.vesselId || ""} onChange={(e) => updateVesselField("vesselId", e.target.value)} className={detailTextBox} disabled={!selectedVessel.isNew} placeholder="예) HD0001"/></div>
-                            <div className="md:col-span-2"><label className={detailLabel}>선박명 <span className="text-red-500">*</span></label><input type="text" value={selectedVessel.vesselNm || ""} onChange={(e) => updateVesselField("vesselNm", e.target.value)} className={detailTextBox} disabled={!isFieldEditable()} placeholder="현대중공업에서 요청한 첫번째 선박" /></div>
+                            <div><label className={detailLabel}>선박 ID <span className="text-red-500">*</span></label><input type="text" value={selectedVessel.vesselId || ""} onChange={(e) => updateVesselField("vesselId", e.target.value)} className={detailTextBox} disabled={!selectedVessel.isNew} placeholder="BC-US01-011"/></div>
+                            <div className="md:col-span-2"><label className={detailLabel}>선박명 <span className="text-red-500">*</span></label><input type="text" value={selectedVessel.vesselNm || ""} onChange={(e) => updateVesselField("vesselNm", e.target.value)} className={detailTextBox} disabled={!isFieldEditable()} placeholder="PACIFIC EAGLE" /></div>
                             <div>
                                 <label className={detailLabel}>선박유형 <span className="text-red-500">*</span></label>
                                 <select 
@@ -328,10 +328,11 @@ export default function Vessels() {
                                     disabled={!isFieldEditable()}
                                 >
                                     <option value="">선박 유형 선택</option>
-                                    <option value="Gas Carrier">Gas Carrier</option>
-                                    <option value="Tanker">Tanker</option>
-                                    <option value="Cargo">Cargo</option>
-                                    <option value="Special Purpose Vessel">Special Purpose Vessel</option>
+                                    <option value="Bulk Carrier">Bulk Carrier</option>
+                                    <option value="Container Ship">Container Ship</option>
+                                    <option value="LNG Carrier">LNG Carrier</option>
+                                    <option value="PSV">PSV</option>
+                                    <option value="VLCC">VLCC</option>
                                 </select>
                             </div>
                             <div><label className={detailLabel}>상태</label><select value={selectedVessel.status ?? 0} onChange={(e) => updateVesselField("status", Number(e.target.value))} className={detailTextBox} disabled={!isFieldEditable()}><option value={0}>계획</option><option value={1}>진행</option><option value={2}>완료</option></select></div>

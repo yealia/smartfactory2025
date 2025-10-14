@@ -438,7 +438,7 @@ const CustomerSearch = memo(({ params, onChange, onSearch }) => (
                 value={params.customerNm}
                 onChange={onChange}
                 onKeyPress={(e) => e.key === 'Enter' && onSearch(params)}
-                placeholder="예) Smart Factory"
+                placeholder="CUSTUS001"
             />
         </SearchField>
         <SearchField label="등록날짜">
@@ -466,10 +466,10 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
                 <>
                     <div className="flex-grow overflow-y-auto px-2 pb-4">
                         <DetailFormLayout>
-                            <DetailField label="고객ID" isRequired><DetailInput name="customerId" value={customer.customerId} onChange={updateField} readOnly={!customer.isNew} placeholder="예) HD001" /></DetailField>
-                            <DetailField label="고객명" isRequired><DetailInput name="customerNm" value={customer.customerNm} onChange={updateField} readOnly={!isFieldEditable} placeholder="예) 현대중공업" /></DetailField>
-                            <DetailField label="사업자등록번호" isRequired><DetailInput name="businessRegistration" value={customer.businessRegistration} onChange={updateField} readOnly={!isFieldEditable} placeholder="123-45-67890" /></DetailField>
-                            <DetailField label="통화(국가코드)"><DetailInput name="countryCode" value={customer.countryCode} onChange={updateField} readOnly={!isFieldEditable} placeholder="KR" /></DetailField>
+                            <DetailField label="고객ID" isRequired><DetailInput name="customerId" value={customer.customerId} onChange={updateField} readOnly={!customer.isNew} placeholder="CUSTUS001" /></DetailField>
+                            <DetailField label="고객명" isRequired><DetailInput name="customerNm" value={customer.customerNm} onChange={updateField} readOnly={!isFieldEditable} placeholder="American Pacific Shipping" /></DetailField>
+                            <DetailField label="사업자등록번호" isRequired><DetailInput name="businessRegistration" value={customer.businessRegistration} onChange={updateField} readOnly={!isFieldEditable} placeholder="US-98-7654321" /></DetailField>
+                            <DetailField label="통화(국가코드)"><DetailInput name="countryCode" value={customer.countryCode} onChange={updateField} readOnly={!isFieldEditable} placeholder="US" /></DetailField>
                             <DetailField label="등록날짜"><DetailDateInput name="contractDate" value={customer.contractDate} onChange={updateField} readOnly={!isFieldEditable} /></DetailField>
                             
                             <DetailField label="상태">
@@ -499,10 +499,10 @@ const CustomerDetails = memo(({ customer, isEditing, actions, employees }) => {
                                     ))}
                                 </DetailSelect>
                             </DetailField>
-                            <DetailField label="연락처" icon="phone"><DetailInput name="contactPhone" value={customer.contactPhone} onChange={updateField} readOnly={!isFieldEditable} placeholder="예) 010-1234-5678" className={inputPadding} /></DetailField>
-                            <DetailField label="E-mail" icon="email"><DetailInput name="contactEmail" value={customer.contactEmail} onChange={updateField} readOnly={!isFieldEditable} placeholder="예) spyard@cp.com" className={inputPadding} /></DetailField>
-                            <div className="md:col-span-3"><DetailField label="주소"><DetailInput name="contactAddress" value={customer.contactAddress} onChange={updateField} readOnly={!isFieldEditable} placeholder="주소를 입력하세요" /></DetailField></div>
-                            <div className="md:col-span-3"><DetailField label="비고"><DetailInput name="remark" value={customer.remark} onChange={updateField} readOnly={!isFieldEditable} placeholder="특이사항을 입력하세요" /></DetailField></div>
+                            <DetailField label="연락처" icon="phone"><DetailInput name="contactPhone" value={customer.contactPhone} onChange={updateField} readOnly={!isFieldEditable} placeholder="+1-213-555-0182" className={inputPadding} /></DetailField>
+                            <DetailField label="E-mail" icon="email"><DetailInput name="contactEmail" value={customer.contactEmail} onChange={updateField} readOnly={!isFieldEditable} placeholder="j.smith@ampacific.com" className={inputPadding} /></DetailField>
+                            <div className="md:col-span-3"><DetailField label="주소"><DetailInput name="contactAddress" value={customer.contactAddress} onChange={updateField} readOnly={!isFieldEditable} placeholder="444 W Ocean Blvd, Long Beach, CA 90802, USA" /></DetailField></div>
+                            <div className="md:col-span-3"><DetailField label="비고"><DetailInput name="remark" value={customer.remark} onChange={updateField} readOnly={!isFieldEditable} placeholder="벌크선 건조 계약" /></DetailField></div>
                         </DetailFormLayout>
                     </div>
 

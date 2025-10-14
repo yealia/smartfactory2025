@@ -85,6 +85,10 @@ const BodyGrid = ({ columns, data, selectedId, sortConfig, onHeaderClick, onRowD
 const API_BASE = "http://localhost:8081/api/project_plans";
 const PROJECTS_API_URL = "http://localhost:8081/api/projects";
 const VESSELS_API_URL = "http://localhost:8081/api/vessels";
+// API 서버(8083)와 통신할 axios 인스턴스
+const apiGatewayClient = axios.create({
+    baseURL: 'http://localhost:8083/api/proxy',
+});
 
 export default function ProjectPlan() {
     const [plans, setPlans] = useState([]);
@@ -208,6 +212,19 @@ export default function ProjectPlan() {
     useEffect(() => {
         loadPlans();
     }, [loadPlans]);
+
+    const syncWithMes = async () => {
+        try {
+            console.log("MES와 Plan ID 동기화를 시작합니다...");
+            // API 게이트웨이(8083)의 동기화 엔드포인트를 호출합니다.
+            await apiGatewayClient.post('/project_plans/sync-to-mes');
+            console.log("Plan ID 동기화가 성공적으로 완료되었습니다.");
+        } catch (error) {
+            console.error("MES 동기화 실패:", error);
+            // 사용자에게는 알리지 않거나, 선택적으로 부드럽게 알릴 수 있습니다.
+            // alert('MES 시스템과 동기화하는 중 오류가 발생했습니다.');
+        }
+    };
     
    const handleSave = async () => {
     if (!editingPlan) return;
@@ -230,6 +247,9 @@ export default function ProjectPlan() {
             await axios.put(`${API_BASE}/${saveData.planId}`, saveData); // 수정된 saveData를 전송
             alert("계획이 수정되었습니다.");
         }
+
+        await syncWithMes();
+
         closeModalAndRefresh();
     } catch (err) {
         console.error("저장 실패:", err);
@@ -245,6 +265,7 @@ export default function ProjectPlan() {
             try {
                 await axios.delete(`${API_BASE}/${editingPlan.planId}`);
                 alert("계획이 삭제되었습니다.");
+                await syncWithMes();
                 closeModalAndRefresh();
             } catch (err) {
                 console.error("삭제 실패:", err);
@@ -270,6 +291,8 @@ export default function ProjectPlan() {
 
         alert("생산 계획이 최종 확정되었습니다.");
         
+        await syncWithMes();
+        
         // 목록을 새로고침하여 화면에 변경사항을 반영합니다.
         await loadPlans();
 
@@ -281,7 +304,7 @@ export default function ProjectPlan() {
 
     const openCreateModal = () => {
         const today = new Date().toISOString().split("T")[0];
-        setEditingPlan({ isNew: true, planId: "", projectId: "", vesselId: "", planScope: "", startDate: today, endDate: today, progressRate: 0, status: 0, remark: "" });
+        setEditingPlan({ isNew: true, planId: "", projectId: "", vesselId: "", planScope: "선수, 중앙부 후미", startDate: today, endDate: today, progressRate: 0, status: 0, remark: "" });
         setIsModalOpen(true);
     };
 

@@ -21,14 +21,14 @@ const gridColumns = [
 
 /** 모달 내부에 표시될 모든 컬럼 정보 (상세 정보) */
 const allDetailColumns = [
-    { header: "수주번호", accessor: "salesOrderId", placeholder:"SO2025-00001" },
+    { header: "수주번호", accessor: "salesOrderId", placeholder:"SO-250711-01" },
     { header: "수주일자", accessor: "orderDate", type: "date" },
     { header: "고객ID", accessor: "customerId" },
     { header: "선박ID", accessor: "vesselId" },
-    { header: "고객발주번호", accessor: "customerPoNo", placeholder:"PO-2025-001" },
+    { header: "고객발주번호", accessor: "customerPoNo", placeholder:"APS-PO-2025-BC-180K" },
     { header: "통화", accessor: "currencyCode" },
     { header: "상태", accessor: "status", type: "number", placeholder: "0: 등록, 1: 판매 요청, 2: 완료" },
-    { header: "총금액", accessor: "totalAmount", type: "number" },
+    { header: "총금액", accessor: "totalAmount", type: "number", placeholder:"95000000.00" },
     { header: "등록자", accessor: "createdBy", readOnly: true },
     { header: "승인일시", accessor: "approvedDate", readOnly: true },
     { header: "승인자", accessor: "approvedBy", readOnly: true },
@@ -360,8 +360,8 @@ export default function SalesOrder() {
     const openCreateModal = () => {
         setActiveOrder({
             isNew: true, salesOrderId: "", orderDate: new Date().toISOString().slice(0, 10),
-            customerId: "", vesselId: "", customerPoNo: "", currencyCode: "KRW",
-            status: 0, totalAmount: 0, createdBy: "react_user", remark: ""
+            customerId: "", vesselId: "", customerPoNo: "", currencyCode: "USD",
+            status: 0, totalAmount: 0, createdBy: "250812101001", remark: ""
         });
         setIsEditMode(true);
         setIsModalOpen(true);
