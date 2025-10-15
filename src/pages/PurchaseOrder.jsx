@@ -282,7 +282,7 @@ export default function PurchaseOrders() {
                 <input 
                     type="text"
                     name="purchaseOrderId"
-                    placeholder="PO-20251013-001"
+
                     value={search.purchaseOrderId}
                     onChange={handleSearchChange}
                     className="border px-3 py-2 rounded-md"

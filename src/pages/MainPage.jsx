@@ -1,166 +1,128 @@
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
 } from "recharts";
-import { UserIcon, CreditCardIcon, CurrencyDollarIcon } from "@heroicons/react/24/solid";
-import { useAuth } from "../auth/AuthContext";
+import { UserGroupIcon, ClipboardDocumentListIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
 
-const dataLine = [
-  { name: "Mon", value: 400 },
-  { name: "Tue", value: 300 },
-  { name: "Wed", value: 500 },
-  { name: "Thu", value: 200 },
-  { name: "Fri", value: 700 },
+// API를 통해 받아올 데이터 예시
+const kpiData = {
+  activeWorkers: 2154,
+  wbsInProgress: 85,
+  stockAlerts: 12,
+};
+
+const weeklyProductionData = [
+  { name: "10/09", 생산량: 15 }, { name: "10/10", 생산량: 18 },
+  { name: "10/11", 생산량: 12 }, { name: "10/12", 생산량: 20 },
+  { name: "10/13", 생산량: 25 }, { name: "10/14", 생산량: 22 },
+  { name: "10/15", 생산량: 19 },
 ];
 
-const dataBar = [
-  { name: "A", uv: 4000 },
-  { name: "B", uv: 3000 },
-  { name: "C", uv: 2000 },
-  { name: "D", uv: 2780 },
+const projectStatusData = [
+  { name: "진행 중", value: 8 }, { name: "계획", value: 5 },
+  { name: "완료", value: 12 },
 ];
+const PIE_COLORS = ["#60a5fa", "#a78bfa", "#4ade80"];
 
-const dataPie = [
-  { name: "완료", value: 400 },
-  { name: "진행중", value: 300 },
-  { name: "지연", value: 200 },
+const materialCostByProcessData = [
+  { name: "조립", "투입 비용": 5200 }, { name: "절단", "투입 비용": 4500 },
+  { name: "탑재", "투입 비용": 3500 }, { name: "가공", "투입 비용": 2800 },
+  { name: "도장", "투입 비용": 1800 },
 ];
-
-const COLORS = ["#4ade80", "#60a5fa", "#f87171"];
-
 
 export default function MainPage() {
-  
-  const { user } = useAuth();
-  
   const cardBox ="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300";
   const valueText = "text-3xl font-bold text-gray-900";
   const titleText = "text-base text-gray-600";
   const iconWrapper = "p-3 rounded-full shadow-md";
   const changeText = "mt-3 inline-flex items-center font-semibold";
 
+
+  
+
+  
+
+
   return (
-    <div className="w-full h-dvh bg-gray-100 overflow-hidden p-4 box-border flex flex-col gap-4">
+    <div className="w-full h-dvh bg-gray-100 overflow-auto p-4 box-border flex flex-col gap-4">
 
       {/* 🔹 1행: KPI 카드 3개 */}
-        <div className="border grid grid-cols-3 gap-6 h-1/9">
-        {/* Users */}
-        <div className={cardBox}>
-            <div className="flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className={cardBox}>
+          <div className="flex items-center justify-between">
             <div>
-                <p className={titleText}>{user.email.split("@")[0]}님</p>
-                <h5 className={valueText}>32.4k</h5>
+              <p className={titleText}>금일 작업 참여 인원</p>
+              <h5 className={valueText}>{kpiData.activeWorkers.toLocaleString()}명</h5>
             </div>
-            <div className={`${iconWrapper} bg-blue-500`}>
-                <UserIcon className="text-white w-6 h-6" />
-            </div>
-            </div>
-            <span className={`${changeText} text-green-600`}>▲ 12%</span>
+            <div className={`${iconWrapper} bg-blue-500`}><UserGroupIcon className="text-white w-6 h-6" /></div>
+          </div>
+          <span className={`${changeText} text-green-600`}>▲ 어제보다 85명 증가</span>
         </div>
-
-        {/* Transactions */}
         <div className={cardBox}>
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
-                <p className={titleText}>스팩중공업(329180) | KOSPI</p>
-                <h5 className={valueText}>12.7M</h5>
+              <p className={titleText}>진행중인 작업지시</p>
+              <h5 className={valueText}>{kpiData.wbsInProgress}건</h5>
             </div>
-            <div className={`${iconWrapper} bg-purple-500`}>
-                <CreditCardIcon className="text-white w-6 h-6" />
-            </div>
-            </div>
-            <span className={`${changeText} text-red-600`}>▼ 3%</span>
+            <div className={`${iconWrapper} bg-purple-500`}><ClipboardDocumentListIcon className="text-white w-6 h-6" /></div>
+          </div>
+          <span className={`${changeText} text-green-600`}>▲ 목표대비 5건 미달</span>
         </div>
-
-        {/* Revenue */}
         <div className={cardBox}>
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
-                <p className={titleText}>스팩중공업(329180) | KOSPI</p>
-                <h5 className={valueText}>485,5000</h5>
-                {/* <p className={titleText}>Revenue</p> */}
+              <p className={titleText}>안전 재고 경고</p>
+              <h5 className={valueText}>{kpiData.stockAlerts}건</h5>
             </div>
-            <div className={`${iconWrapper} bg-green-500`}>
-                <CurrencyDollarIcon className="text-white w-6 h-6" />
-            </div>
-            </div>
-            <span className={`${changeText} text-green-600`}>▲ 2500</span>
+            <div className={`${iconWrapper} bg-red-500`}><ExclamationTriangleIcon className="text-white w-6 h-6" /></div>
+          </div>
+          <span className={`${changeText} text-red-600`}>▼ 즉시 발주 필요</span>
         </div>
-        </div>
+      </div>
 
       {/* 🔹 2행: 그래프 2개 */}
-      <div className="grid grid-cols-2 gap-6 h-2/5">
-        {/* 라인 차트 */}
-        <div className={cardBox}>
-          <h5 className="font-semibold mb-2">일별 사용자</h5>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={dataLine}>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className={cardBox + " lg:col-span-3"}>
+          <h5 className="font-semibold mb-2">주간 블록 생산 실적</h5>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={weeklyProductionData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#ff0051"
-                strokeWidth={2}
-              />
+              <Line type="monotone" dataKey="생산량" stroke="#e11d48" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
-
-        {/* 파이 차트 */}
-        <div className={cardBox}>
-          <h5 className="font-semibold mb-2">작업 현황</h5>
-          <ResponsiveContainer width="100%" height="90%">
+        <div className={cardBox + " lg:col-span-2"}>
+          <h5 className="font-semibold mb-2">프로젝트 진행 상태</h5>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie
-                data={dataPie}
-                dataKey="value"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label
-              >
-                {dataPie.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
+              <Pie data={projectStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {projectStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>  
-
-      {/* 🔹 3행: 가로 막대그래프 (넓게 1개) */}
-      <div className="h-2/5">
-        <div className={cardBox + " h-full"}>
-          <h5 className="font-semibold mb-2">부서별 실적</h5>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={dataBar} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" />
-              <Tooltip />
-              <Bar dataKey="uv" fill="#0389ff" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
       </div>
-{/*0389ff*/}
+
+      {/* 🔹 3행: 가로 막대그래프 */}
+      <div className={cardBox}>
+        <h5 className="font-semibold mb-2">공정별 자재 투입 비용 (단위: 백만원)</h5>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={materialCostByProcessData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis dataKey="name" type="category" width={60} />
+            <Tooltip />
+            <Bar dataKey="투입 비용" fill="#3b82f6" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
     </div>
   );
 }
